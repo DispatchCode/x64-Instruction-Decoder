@@ -72,10 +72,15 @@ int main(int argc, char *argv[]) {
     uint8_t buf[BUFFER_SIZE];
     reads = fread(buf, sizeof(char), BUFFER_SIZE, hfile);
 
+    int instr_count = 0;
     while(!feof(hfile)) {
+        instr_count++;
 
         offset = mca_decode(&instr, arch, (char*)buf, 0);
         instruction_info(instr);
+
+        if(instr.op == 0xCC && instr_count != 0xCC && !(instr.set_field & PREFIX))
+            printf("Possible decoding error\n");
 
         reads = fread(buf, sizeof(char), BUFFER_SIZE, hfile);
     }
