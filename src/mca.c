@@ -1,4 +1,4 @@
-#include "fenice.h"
+#include "mca.h"
 
 static inline bool check_sib(uint8_t mod, uint8_t rm) {
     return mod < 3 && rm == 4;
@@ -145,6 +145,9 @@ int decode(struct instruction *instr, enum supported_architecture arch, char *da
         instr->prefix_cnt++;
         instr->length++;
 
+        // Rex prefix
+        // TODO 64-bit mode: IF OP == 90h and REX.B == 1,
+        //  then the instruction is XCHG r8, rAX
         if(arch == X64 && (curr & 0x40))
         {
             instr->rex.value = curr;

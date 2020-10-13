@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "fenice.h"
+#include "mca.h"
 
 #define  BUFFER_SIZE  16
 
@@ -8,7 +8,7 @@ size_t get_file_size(FILE *hfile)
 {
     fseek(hfile, 0, SEEK_END);
     size_t file_size = (size_t) ftell(hfile);
-    fseek(hfile, 0, 0);
+    rewind(hfile);
 
     return file_size;
 }
@@ -68,15 +68,17 @@ int main(int argc, char *argv[]) {
     int reads;
     int offset = 0;
 
-    int file_size = get_file_size(hfile);
-    uint8_t buf[file_size];
-    reads = fread(buf, sizeof(char), file_size, hfile);
+    //int file_size = get_file_size(hfile);
+    uint8_t buf[BUFFER_SIZE];
+    reads = fread(buf, sizeof(char), BUFFER_SIZE, hfile);
 
-    do {
+    while(!feof(hfile)) {
 
-        offset += decode(&instr, arch, (char*)buf, offset);
+        offset = decode(&instr, arch, (char*)buf, 0);
         instruction_info(instr);
-    } while(offset < file_size);
+
+        reads = fread(buf, sizeof(char), BUFFER_SIZE, hfile);
+    }
 
     fclose(hfile);
 
