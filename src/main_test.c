@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
 
     while(!feof(hfile)) {
 
-        offset = decode(&instr, arch, (char*)buf, 0);
+        offset = mca_decode(&instr, arch, (char*)buf, 0);
         instruction_info(instr);
 
         reads = fread(buf, sizeof(char), BUFFER_SIZE, hfile);

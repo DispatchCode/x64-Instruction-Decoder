@@ -1,10 +1,10 @@
 #include "mca.h"
 
-static inline bool check_sib(uint8_t mod, uint8_t rm) {
+static inline bool mca_check_sib(uint8_t mod, uint8_t rm) {
     return mod < 3 && rm == 4;
 }
 
-static inline int displacement_size(uint8_t mod, uint8_t rm) {
+static inline int mca_displacement_size(uint8_t mod, uint8_t rm) {
     if((mod == 0x02) || (rm == 0x05 && !mod))
         return 4;
     else if(mod == 0x01)
@@ -12,7 +12,7 @@ static inline int displacement_size(uint8_t mod, uint8_t rm) {
     return 0;
 }
 
-static inline int imm_size(struct instruction *instr, size_t val, enum supported_architecture arch) {
+static inline int mca_imm_size(struct instruction *instr, size_t val, enum supported_architecture arch) {
     switch (val) {
         case b:
         case b1:
@@ -57,7 +57,7 @@ static inline int imm_size(struct instruction *instr, size_t val, enum supported
     }
 }
 
-static void decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *start_data, const size_t *modrm_table, const size_t *imm_table) {
+static void mca_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *start_data, const size_t *modrm_table, const size_t *imm_table) {
     size_t val = 0;
     if((val = modrm_table[instr->op])) {
         instr->set_field |= MODRM;
@@ -72,7 +72,7 @@ static void decode_modrm(struct instruction *instr, enum supported_architecture 
 
         uint8_t mod_val = instr->modrm.bits.mod, rm_val = instr->modrm.bits.rm;
 
-        if(check_sib(instr->modrm.bits.mod,instr->modrm.bits.rm)) {
+        if(mca_check_sib(instr->modrm.bits.mod,instr->modrm.bits.rm)) {
             instr->set_field |= SIB;
 
             instr->sib.value = (uint8_t) *(start_data + instr->length);
@@ -87,13 +87,13 @@ static void decode_modrm(struct instruction *instr, enum supported_architecture 
         // displacement
         if(instr->modrm.bits.mod < 3) {
             instr->set_field |= DISP;
-            instr->disp_len = displacement_size(mod_val, rm_val);
+            instr->disp_len = mca_displacement_size(mod_val, rm_val);
             memcpy(&instr->disp, (start_data + instr->length), instr->disp_len);
             instr->length += instr->disp_len;
         }
     }
 
-    instr->imm_len = imm_size(instr, imm_table[instr->op], arch);
+    instr->imm_len = mca_imm_size(instr, imm_table[instr->op], arch);
     if(instr->imm_len) {
         instr->set_field |= IMM;
         memcpy(&instr->imm, (start_data + instr->length), instr->imm_len);
@@ -101,7 +101,7 @@ static void decode_modrm(struct instruction *instr, enum supported_architecture 
     }
 }
 
-int decode(struct instruction *instr, enum supported_architecture arch, char *data, int offset) {
+int mca_decode(struct instruction *instr, enum supported_architecture arch, char *data, int offset) {
     memset(instr, 0, sizeof(struct instruction));
 
     char *start_data = (data + offset);
@@ -163,8 +163,11 @@ int decode(struct instruction *instr, enum supported_architecture arch, char *da
     instr->length++;
     instr->op = curr;
 
-    decode_modrm(instr, arch, start_data, modrm_1b, imm_byte_1b);
+    mca_decode_modrm(instr, arch, start_data, modrm_1b, imm_byte_1b);
 
+#ifdef _ENABLE_RAW_BYTES
     memcpy(instr->instr, start_data, instr->length);
+#endif
+
     return instr->length;
 }

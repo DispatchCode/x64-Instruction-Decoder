@@ -5,6 +5,9 @@
 #include <stdbool.h>
 #include <string.h>
 
+#define  _ENABLE_RAW_BYTES
+
+
 enum supported_architecture {
     X86 = 1,
     X64 = 2
@@ -127,7 +130,9 @@ enum instruction_feature {
 };
 
 struct instruction {
+#ifdef _ENABLE_RAW_BYTES
     uint8_t instr[15];
+#endif
 
     uint8_t prefixes[4];
     uint8_t op;
@@ -182,11 +187,11 @@ struct instruction {
 //
 // Functions
 //
-int decode(struct instruction *instr, enum supported_architecture arch, char *data_src, int offset);
-static void decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *data_src, const size_t *modrm_table, const size_t *imm_table);
-static inline bool check_sib(uint8_t mod, uint8_t rm);
-static inline int displacement_size(uint8_t mod, uint8_t rm);
-static inline int imm_size(struct instruction *instr, size_t val, enum supported_architecture arch);
+int mca_decode(struct instruction *instr, enum supported_architecture arch, char *data_src, int offset);
+static void mca_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *data_src, const size_t *modrm_table, const size_t *imm_table);
+static inline bool mca_check_sib(uint8_t mod, uint8_t rm);
+static inline int mca_displacement_size(uint8_t mod, uint8_t rm);
+static inline int mca_imm_size(struct instruction *instr, size_t val, enum supported_architecture arch);
 
 
 #endif //FENICE_FENICE_H
