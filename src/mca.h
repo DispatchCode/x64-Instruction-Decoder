@@ -23,7 +23,7 @@ enum decode_status {
 // instruction prefix look-up table
 static size_t x86_64_prefix[256] = {
         //       00  01  02  03  04  05  06  07  08  09  0A  0B  0C  0D  0E  0F
-        /* 00 */ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        /* 00 */ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  ALL,
         /* 10 */ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
         /* 20 */ 0,  0,  0,  0,  0,  0,  ALL,0,  0,  0,  0,  0,  0,  0,  ALL,0,
         /* 30 */ 0,  0,  0,  0,  0,  0,  ALL,0,  0,  0,  0,  0,  0,  0,  ALL,0,
@@ -232,12 +232,15 @@ struct instruction {
         uint8_t value;
     } sib;
 
+    uint8_t vex[3];
+
     uint64_t disp;
     uint64_t imm;
 
     uint16_t set_prefix; // bit mask
     uint16_t set_field;
 
+    int8_t vex_cnt;
     int prefix_cnt;
     int length;
     int disp_len;
@@ -254,5 +257,7 @@ static inline bool mca_check_sib(uint8_t mod, uint8_t rm);
 static inline int mca_displacement_size(uint8_t mod, uint8_t rm);
 static inline int mca_imm_size(struct instruction *instr, size_t val, enum supported_architecture arch);
 static int mca_decode_2b(struct instruction *instr, enum supported_architecture arch, const char *data_src);
+static inline int mca_vex_size(struct instruction *instr, enum supported_architecture arch, const char *data);
+static inline void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, uint8_t vex_size);
 
 #endif //FENICE_FENICE_H

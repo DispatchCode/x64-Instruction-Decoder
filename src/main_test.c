@@ -17,15 +17,24 @@ void instruction_info(struct instruction instr)
 {
     printf("------------------------------------------------\n");
     printf("len: %d\n", instr.length);
+
+    #ifdef _ENABLE_RAW_BYTES
     printf("RAW bytes (hex): ");
     for(int i=0; i<instr.length; i++)
         printf("%02X ", instr.instr[i]);
+    #endif
 
     printf("\n\nPrint instruction fields:\n");
-    printf("\tLocated Prefixes %d:\n", instr.prefix_cnt);
+    printf("\tLocated Prefixes %d:\n\t\t", instr.prefix_cnt);
 
     for (int i = 0; i < instr.prefix_cnt; i++)
         printf("0x%X ", instr.prefixes[i]);
+
+    if(instr.set_field & VEX) {
+        printf("\n\tVEX prefix value:\n\t\t");
+        for(int i=0; i<instr.vex_cnt; i++)
+            printf("0x%X ", instr.vex[i]);
+    }
 
     printf("\n\tOP: 0x%X\n", instr.op);
 

@@ -1,7 +1,33 @@
 #include "mca.h"
 
-static inline bool check_vex(struct instruction *instr, char *data, enum supported_architecture arch) {
+static inline void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, uint8_t vex_size) {
+    instr->set_field |= VEX;
 
+    memcpy(instr->vex, (data+instr->length), vex_size);
+    instr->vex_cnt += vex_size;
+    instr->length  += vex_size;
+
+    instr->op = *(data + instr->length);
+    instr->length++;
+
+    if(instr->vex[0] == 0xC5)
+        mca_decode_modrm(instr, arch, data, modrm_2b, imm_byte_2b);
+    // TODO else decode 3-byte vex
+
+}
+
+static inline int mca_vex_size(struct instruction *instr, enum supported_architecture arch, const char *data) {
+    uint8_t curr_byte = (uint8_t) *(data + instr->length);
+    uint8_t next_byte = (uint8_t) *(data + instr->length + 1);
+
+    // 3-byte VEX prefix
+    if ((arch == X86 && curr_byte == 0xC4 && (next_byte >> 6) == 3) || (arch == X64 && curr_byte == 0xC4))
+        return 3;
+        // 2-byte VEX prefix
+    else if ((arch == X86 && curr_byte == 0xC5 && (next_byte & 0x80)) || (arch == X64 && curr_byte == 0xC5))
+        return 2;
+
+    return 0;
 }
 
 static inline bool mca_check_sib(uint8_t mod, uint8_t rm) {
@@ -129,10 +155,6 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
     char *start_data = (data + offset);
     uint8_t curr = (uint8_t) *(start_data);
 
-    // TODO  vex prefix decode
-    //  x64 -> C4, C5, 8F -> VEX present
-    //  x86 ->            -> VEX present only if the 2nd byte MSBs == 11b
-
     while(x86_64_prefix[curr] & arch)
     {
         switch(curr) {
@@ -190,10 +212,16 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
 
         curr = (uint8_t) *(start_data + instr->length);
     }
-    instr->length++;
-    instr->op = curr;
 
-    mca_decode_modrm(instr, arch, start_data, modrm_1b, imm_byte_1b);
+    size_t vex_size = mca_vex_size(instr, arch, start_data);
+    if(vex_size)
+        mca_vex_decode(instr, arch, start_data, vex_size);
+    else
+    {
+        instr->length++;
+        instr->op = curr;
+        mca_decode_modrm(instr, arch, start_data, modrm_1b, imm_byte_1b);
+    }
 
 #ifdef _ENABLE_RAW_BYTES
     memcpy(instr->instr, start_data, instr->length);
