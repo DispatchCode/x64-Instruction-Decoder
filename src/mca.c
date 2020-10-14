@@ -1,5 +1,9 @@
 #include "mca.h"
 
+static inline bool check_vex(struct instruction *instr, char *data, enum supported_architecture arch) {
+
+}
+
 static inline bool mca_check_sib(uint8_t mod, uint8_t rm) {
     return mod < 3 && rm == 4;
 }
@@ -101,11 +105,33 @@ static void mca_decode_modrm(struct instruction *instr, enum supported_architect
     }
 }
 
+static int mca_decode_2b(struct instruction *instr, enum supported_architecture arch, const char *data_src)
+{
+    instr->set_prefix |= ESCAPE;
+    uint8_t curr = (uint8_t) *(data_src + instr->length);
+
+    if(curr == 0x3A || curr == 0x38)
+    {
+        // TODO  3-byte OP decode
+    }
+
+    instr->op = curr;
+    instr->length++;
+
+    mca_decode_modrm(instr, arch, data_src, modrm_2b, imm_byte_2b);
+
+    return instr->length;
+}
+
 int mca_decode(struct instruction *instr, enum supported_architecture arch, char *data, int offset) {
     memset(instr, 0, sizeof(struct instruction));
 
     char *start_data = (data + offset);
     uint8_t curr = (uint8_t) *(start_data);
+
+    // TODO  vex prefix decode
+    //  x64 -> C4, C5, 8F -> VEX present
+    //  x86 ->            -> VEX present only if the 2nd byte MSBs == 11b
 
     while(x86_64_prefix[curr] & arch)
     {
@@ -155,7 +181,11 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
         }
         else if(curr == 0x0F)
         {
-            // TODO  2-byte opcodes decode
+            mca_decode_2b(instr, arch, start_data);
+            #ifdef _ENABLE_RAW_BYTES
+            memcpy(instr->instr, start_data, instr->length);
+            #endif
+            return instr->length;
         }
 
         curr = (uint8_t) *(start_data + instr->length);
