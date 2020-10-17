@@ -320,7 +320,7 @@ enum vex_mask {
  *      00100-11111: Reserved for future use (will #UD)
  *
  */
-
+#pragma pack(1)
 struct instruction {
 #ifdef _ENABLE_RAW_BYTES
     uint8_t instr[15];

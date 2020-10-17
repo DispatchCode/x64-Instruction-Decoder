@@ -160,6 +160,8 @@ static int mca_decode_2b(struct instruction *instr, enum supported_architecture 
 
         instr->prefixes[instr->prefix_cnt++] = curr;
         instr->length++;
+        instr->op = *(data_src + instr->length);
+        instr->length++;
 
         if(curr == 0x3A)
             mca_decode_modrm(instr, arch, data_src, modreg_3b_3A, imm_byte_3b_3A);
