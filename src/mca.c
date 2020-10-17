@@ -1,8 +1,6 @@
 #include "mca.h"
 
 static inline void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, uint8_t vex_size) {
-    instr->set_field |= VEX;
-
     memcpy(instr->vex, (data+instr->length), vex_size);
     instr->vex_cnt += vex_size;
     instr->length  += vex_size;
@@ -10,9 +8,29 @@ static inline void mca_vex_decode(struct instruction *instr, enum supported_arch
     instr->op = *(data + instr->length);
     instr->length++;
 
+    instr->set_prefix |= VEX;
+
     if(instr->vex[0] == 0xC5)
         mca_decode_modrm(instr, arch, data, modrm_2b, imm_byte_2b);
-    // TODO else decode 3-byte vex
+    else if(instr->vex[0] == 0xC4)
+    {
+        switch (instr->vex[1] & 0x3) {
+            case 0: // ignored, #UD
+            break;
+            case 1:
+                mca_decode_modrm(instr, arch, data, modrm_2b, imm_byte_2b);
+            break;
+            case 2:
+                mca_decode_modrm(instr, arch, data, modreg_3b_38, imm_byte_3b_38);
+            break;
+            case 3:
+                mca_decode_modrm(instr, arch, data, modreg_3b_3A, imm_byte_3b_3A);
+            break;
+            default:
+            break; // #UD
+        }
+    }
+    // TODO  XOP, 0x8F
 
 }
 
@@ -138,7 +156,17 @@ static int mca_decode_2b(struct instruction *instr, enum supported_architecture 
 
     if(curr == 0x3A || curr == 0x38)
     {
-        // TODO  3-byte OP decode
+        instr->set_prefix |= OP3B;
+
+        instr->prefixes[instr->prefix_cnt++] = curr;
+        instr->length++;
+
+        if(curr == 0x3A)
+            mca_decode_modrm(instr, arch, data_src, modreg_3b_3A, imm_byte_3b_3A);
+        else
+            mca_decode_modrm(instr, arch, data_src, modreg_3b_38, imm_byte_3b_38);
+
+        return instr->length;
     }
 
     instr->op = curr;
