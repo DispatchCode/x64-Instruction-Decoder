@@ -320,8 +320,11 @@ enum vex_mask {
  *      00100-11111: Reserved for future use (will #UD)
  *
  */
-#pragma pack(1)
+
 struct instruction {
+    uint64_t disp;
+    uint64_t imm;
+
 #ifdef _ENABLE_RAW_BYTES
     uint8_t instr[15];
 #endif
@@ -365,17 +368,15 @@ struct instruction {
 
     uint8_t vex[3];
 
-    uint64_t disp;
-    uint64_t imm;
+    int length;
+    int disp_len;
+    int imm_len;
 
     uint16_t set_prefix; // bit mask
     uint16_t set_field;
 
     int8_t vex_cnt;
     int8_t prefix_cnt;
-    int length;
-    int disp_len;
-    int imm_len;
 };
 
 
