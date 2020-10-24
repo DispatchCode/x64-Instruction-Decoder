@@ -127,17 +127,17 @@ static void mca_decode_modrm(struct instruction *instr, enum supported_architect
             instr->length++;
 
             if(instr->sib.bits.base == 0x05) {
-                mod_val = instr->sib.bits.scaled;
+                instr->set_field |= DISP;
+                mod_val = instr->modrm.bits.mod;
                 rm_val  = instr->sib.bits.base;
             }
         }
 
-        // displacement
-        if(instr->modrm.bits.mod < 3) {
-            instr->set_field |= DISP;
-            instr->disp_len = mca_displacement_size(mod_val, rm_val);
+        instr->disp_len = mca_displacement_size(mod_val, rm_val);
+        if(instr->disp_len || instr->set_field & DISP) {
             memcpy(&instr->disp, (start_data + instr->length), instr->disp_len);
             instr->length += instr->disp_len;
+            instr->set_field |= DISP;
         }
     }
 
