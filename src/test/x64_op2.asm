@@ -68,10 +68,10 @@ times   pad - ($ - $op10) db 0xCC
 op11:   movupd  [var], xmm1
 times   pad - ($ - $op11) db 0xCC
 
-op12:   vmovsldup  ymm1, [rbx + var]
+op12:   vmovsldup  ymm1, [rbp*4 + var]
 times   pad - ($ - $op12) db 0xCC
 
-op13:   movlpd  [rcx * 2 + var], xmm1
+op13:   movlpd [ebx*8+ecx], xmm1
 times   pad - ($ - $op13) db 0xCC
 
 op14:   unpcklpd xmm1, xmm2
