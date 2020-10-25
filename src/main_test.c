@@ -4,27 +4,17 @@
 
 #define  BUFFER_SIZE  16
 
-size_t get_file_size(FILE *hfile)
-{
-    fseek(hfile, 0, SEEK_END);
-    size_t file_size = (size_t) ftell(hfile);
-    rewind(hfile);
-
-    return file_size;
-}
-
 void instruction_info(struct instruction instr)
 {
-    printf("------------------------------------------------\n");
-    printf("len: %d\n", instr.length);
-
     #ifdef _ENABLE_RAW_BYTES
     printf("RAW bytes (hex): ");
     for(int i=0; i<instr.length; i++)
         printf("%02X ", instr.instr[i]);
     #endif
 
-    printf("\n\nPrint instruction fields:\n");
+    printf("\nInstr. length: %d\n", instr.length);
+
+    printf("Print instruction fields:\n");
     printf("\tLocated Prefixes %d:\n\t\t", instr.prefix_cnt);
 
     for (int i = 0; i < instr.prefix_cnt; i++)
@@ -54,6 +44,20 @@ void instruction_info(struct instruction instr)
 
 }
 
+static int count_bytes(const uint8_t *instr_bytes) {
+    int i = 0;
+    for(; i<BUFFER_SIZE && instr_bytes[i] != 0xCC; i++);
+    return i;
+}
+
+static int count_cc_bytes(const uint8_t *instr_bytes) {
+    int i = 0, count = 0;
+    for(; i<BUFFER_SIZE; i++)
+        if(instr_bytes[i] == 0xCC)
+            count++;
+    return count;
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         printf("Usage:\n");
@@ -77,21 +81,30 @@ int main(int argc, char *argv[]) {
     int reads;
     int offset = 0;
 
-    //int file_size = get_file_size(hfile);
     uint8_t buf[BUFFER_SIZE];
-    reads = fread(buf, sizeof(char), BUFFER_SIZE, hfile);
 
     int instr_count = 0;
     while(!feof(hfile)) {
-        instr_count++;
+        reads = fread(buf, sizeof(char), BUFFER_SIZE, hfile);
+        int cc_bytes = count_bytes(buf);
+        if(cc_bytes == 0)
+            continue; // skip, it's just an invalid/not encoded OP
+
+        printf("\nBytes from file: ");
+        for(int i=0; i<BUFFER_SIZE; i++)
+            printf("%02X ", buf[i]);
+        printf("\n");
 
         offset = mca_decode(&instr, arch, (char*)buf, 0);
         instruction_info(instr);
 
-        if(instr.op == 0xCC && instr_count != 0xCC && !(instr.set_field & PREFIX))
-            printf("Possible decoding error\n");
+        // instruction may have 0xCC bytes,
+        // toulerance count 0xCC that are part of the instruction
+        int tolerance = count_cc_bytes(instr.instr);
+        if((cc_bytes+tolerance) != instr.length)
+            printf("Possible decoding error.\nCounted bytes: %d\n\n",cc_bytes);
 
-        reads = fread(buf, sizeof(char), BUFFER_SIZE, hfile);
+        instr_count++;
     }
 
     fclose(hfile);
