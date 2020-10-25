@@ -63,26 +63,25 @@ static inline int mca_displacement_size(uint8_t mod, uint8_t rm) {
 static inline int mca_imm_size(struct instruction *instr, size_t val, enum supported_architecture arch) {
     switch (val) {
         case b:
-        case b1:
             return 1;
         case v:
             if(arch == X64 && instr->set_prefix & OP64)
                 return 8;
-            else if(instr->set_prefix & OS)
+            if(instr->set_prefix & OS)
                 return 2;
             return 4;
         case z:
         case z1:
-            if(instr->set_prefix & OS)
-                return 2;
+            //if(instr->set_prefix & OS)
+             //   return 2;
             return 4;
         case p:
             if(instr->set_prefix & OS) {
                 if (arch == X86)
-                    return 2;
+                    return 4;
                 return 8;
             }
-            return 4;
+            return 6;
         case w:
             return 2;
         case wb:
