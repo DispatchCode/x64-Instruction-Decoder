@@ -10,10 +10,20 @@ static inline void mca_vex_decode(struct instruction *instr, enum supported_arch
 
     instr->set_prefix |= VEX;
 
-    if(instr->vex[0] == 0xC5)
+    if(instr->vex[0] == 0xC5) {
+        #ifdef _ENABLE_VEX_INFO
+            instr->_vex.type = instr->vex[0];
+            instr->_vex.val5 = instr->vex[1];
+        #endif
+
         mca_decode_modrm(instr, arch, data, modrm_2b, imm_byte_2b);
-    else if(instr->vex[0] == 0xC4)
-    {
+    }
+    else if(instr->vex[0] == 0xC4) {
+
+        #ifdef _ENABLE_VEX_INFO
+            instr->_vex.type = instr->vex[0];
+            memcpy(&instr->_vex.val4, &instr->vex[1],2);
+        #endif
         switch (instr->vex[1] & 0x3) {
             case 0: // ignored, #UD
             break;

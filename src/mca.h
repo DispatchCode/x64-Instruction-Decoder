@@ -6,7 +6,7 @@
 #include <string.h>
 
 #define  _ENABLE_RAW_BYTES
-
+#define  _ENABLE_VEX_INFO
 
 enum supported_architecture {
     X86 = 1,
@@ -321,9 +321,44 @@ enum vex_mask {
  *
  */
 
+#ifdef _ENABLE_VEX_INFO
+struct vex_info {
+    struct {
+        uint8_t type;
+        union {
+            struct byte2 {
+                uint8_t vex_pp: 2;
+                uint8_t vex_l: 1;
+                uint8_t vex_v: 4;
+                uint8_t vex_r: 1;
+            } vexc5b;
+            uint8_t val5;
+        };
+        union {
+            struct byte3 {
+                uint8_t vex_m : 5;
+                uint8_t vex_b : 1;
+                uint8_t vex_x : 1;
+                uint8_t vex_r : 1;
+
+                uint8_t vex_pp : 2;
+                uint8_t vex_l : 1;
+                uint8_t vex_v : 4;
+                uint8_t vex_w : 1;
+            } vexc4b;
+            uint16_t val4;
+        };
+    };
+};
+#endif
+
 struct instruction {
     uint64_t disp;
     uint64_t imm;
+
+#ifdef _ENABLE_VEX_INFO
+    struct vex_info _vex;
+#endif
 
 #ifdef _ENABLE_RAW_BYTES
     uint8_t instr[15];

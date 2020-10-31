@@ -24,6 +24,28 @@ void instruction_info(struct instruction instr)
         printf("\n\tVEX prefix value:\n\t\t");
         for(int i=0; i<instr.vex_cnt; i++)
             printf("0x%X ", instr.vex[i]);
+
+        #ifdef _ENABLE_VEX_INFO
+            if(instr._vex.type == 0xC5) {
+                printf("\n\tField 0x%X:\n\t\t", instr.vex[1]);
+                printf("r: %X\n\t\t", instr._vex.vexc5b.vex_r);
+                printf("v: %X\n\t\t", instr._vex.vexc5b.vex_v);
+                printf("L: %X\n\t\t", instr._vex.vexc5b.vex_l);
+                printf("pp: %X\n\t\t", instr._vex.vexc5b.vex_pp);
+            }
+            else {
+                printf("\n\tField 0x%X:\n\t\t",instr.vex[1]);
+                printf("r: %X\n\t\t", instr._vex.vexc4b.vex_r);
+                printf("x: %X\n\t\t", instr._vex.vexc4b.vex_x);
+                printf("b: %X\n\t\t", instr._vex.vexc4b.vex_b);
+                printf("m: %X\n\n\t", instr._vex.vexc4b.vex_m);
+                printf("Field 0x%X:\n\t\t",instr.vex[2]);
+                printf("W: %X\n\t\t", instr._vex.vexc4b.vex_w);
+                printf("v: %X\n\t\t", instr._vex.vexc4b.vex_v);
+                printf("L: %X\n\t\t", instr._vex.vexc4b.vex_l);
+                printf("pp: %X\n\n\t", instr._vex.vexc4b.vex_pp);
+            }
+        #endif
     }
 
     printf("\n\tOP: 0x%X\n", instr.op);
