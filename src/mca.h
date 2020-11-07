@@ -1,5 +1,5 @@
-#ifndef FENICE_FENICE_H
-#define FENICE_FENICE_H
+#ifndef MCA_H
+#define MCA_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -70,7 +70,6 @@ static size_t modrm_1b[256] = {
 #define   v   2 // word, dword or qword (64bit mode), depending on OS attribute
 #define   z   3 // word for 16bit OS or dword for 32/64-bit OS
 #define   p   4 // 32-bit, 48-bit, or 80-bit pointer, depending on operand-size attribute
-#define   b1  5 // byte
 #define   z1  6 // word for 16bit OS or dword for 32/64-bit OS
 #define   w   7 // word
 #define   wb  8 // word, byte
@@ -96,10 +95,6 @@ static size_t imm_byte_1b[256] = {
         /* E0 */ b, b, b, b, b, b, b, b, z, z, p, b, 0, 0, 0, 0,
         /* F0 */ 0, 0, 0, 0, 0, 0, gr3b, gr3z, 0, 0, 0, 0, 0, 0, 0, 0
 };
-
-//
-// 1-byte lookup table END
-//
 
 //
 // 2-byte OP look-up table
@@ -283,20 +278,6 @@ enum instruction_feature {
     FPU    = 1024,
 };
 
-// TODO make structure filled on the fly for 0xC4 and 0xC5 VEX prefixes with all the information needed based on the single byte
-
-enum vex_mask {
-    VEX_TYPE = 0xFF,
-    VEX_R = 0x80,
-    VEX_X = 0x40,
-    VEX_B = 0X20,
-    VEX_M = 0X1F,
-    REX_W = 0X80,
-    REX_V = 0x78,
-    REX_L = 0x02,
-    REX_P = 0x03
-};
-
 /*
  * VEX FORMAT
  *
@@ -427,4 +408,4 @@ static int mca_decode_2b(struct instruction *instr, enum supported_architecture 
 static inline int mca_vex_size(struct instruction *instr, enum supported_architecture arch, const char *data);
 static inline void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, uint8_t vex_size);
 
-#endif //FENICE_FENICE_H
+#endif //MCA_H

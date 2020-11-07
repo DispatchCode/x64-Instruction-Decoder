@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "mca.h"
+#include "../mca.h"
+
+/*
+ * Please, take a look at README before edit this file or tests (.asm) files
+ */
 
 #define  BUFFER_SIZE  16
 

@@ -115,7 +115,7 @@ static inline int mca_imm_size(struct instruction *instr, size_t val, enum suppo
 }
 
 static void mca_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *start_data, const size_t *modrm_table, const size_t *imm_table) {
-    size_t val = 0;
+    size_t val;
     if((val = modrm_table[instr->op])) {
         instr->set_field |= MODRM;
 
