@@ -10,4 +10,4 @@ set(SOURCES src/main.c)
 
 add_executable(mca ${COMMONS} ${SOURCES})
 
-include(src/test/CMakeLists.txt)
+include(test/CMakeLists.txt)

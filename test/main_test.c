@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "../mca.h"
+#include "../src/mca.h"
 
 /*
  * Please, take a look at README before edit this file or tests (.asm) files
