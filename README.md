@@ -1,5 +1,4 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![GitHub release](https://img.shields.io/github/release/DispatchCode/StrapDown.js.svg)](https://gitHub.com/DispatchCode/Machine-Code-Analyzer/releases/)
 
 # MCA ~ Machine Code Analyzer
 
