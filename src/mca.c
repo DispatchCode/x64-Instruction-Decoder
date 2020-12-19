@@ -235,7 +235,7 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
         // Rex prefix
         // TODO 64-bit mode: IF OP == 90h and REX.B == 1,
         //  then the instruction is XCHG r8, rAX
-        if(arch == X64 && (curr & 0x40))
+        if(arch == X64 && (curr >= 0x40 && curr <= 0x4F))
         {
             instr->rex.value = curr;
             instr->set_field |= REX;
