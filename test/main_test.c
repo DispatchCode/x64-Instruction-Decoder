@@ -24,6 +24,9 @@ void instruction_info(struct instruction instr)
     for (int i = 0; i < instr.prefix_cnt; i++)
         printf("0x%X ", instr.prefixes[i]);
 
+    if(instr.set_field & REX)
+        printf("\n\n\tREX 0x%X:", instr.rex.value);
+
     if(instr.set_prefix & VEX) {
         printf("\n\tVEX prefix value:\n\t\t");
         for(int i=0; i<instr.vex_cnt; i++)
