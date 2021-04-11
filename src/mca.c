@@ -1,5 +1,8 @@
 #include "mca.h"
 
+static size_t *imm_table[4] = {0, imm_byte_2b,imm_byte_3b_38,imm_byte_3b_3A };
+static size_t *modrm_table[4] = {0, modrm_2b,modreg_3b_38,modreg_3b_3A };
+
 static inline void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, uint8_t vex_size) {
     memcpy(instr->vex, (data+instr->length), vex_size);
     instr->vex_cnt += vex_size;
@@ -24,21 +27,9 @@ static inline void mca_vex_decode(struct instruction *instr, enum supported_arch
             instr->_vex.type = instr->vex[0];
             memcpy(&instr->_vex.val4, &instr->vex[1],2);
         #endif
-        switch (instr->vex[1] & 0x3) {
-            case 0: // ignored, #UD
-            break;
-            case 1:
-                mca_decode_modrm(instr, arch, data, modrm_2b, imm_byte_2b);
-            break;
-            case 2:
-                mca_decode_modrm(instr, arch, data, modreg_3b_38, imm_byte_3b_38);
-            break;
-            case 3:
-                mca_decode_modrm(instr, arch, data, modreg_3b_3A, imm_byte_3b_3A);
-            break;
-            default:
-            break; // #UD
-        }
+
+        int8_t index = instr->vex[1] & 0x3;
+        mca_decode_modrm(instr, arch, data, modrm_table[index], imm_table[index]);
     }
     // TODO  XOP, 0x8F
 
