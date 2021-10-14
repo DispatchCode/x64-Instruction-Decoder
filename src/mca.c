@@ -73,8 +73,8 @@ static inline int mca_imm_size(struct instruction *instr, size_t val, enum suppo
             return 4;
         case z:
         case z1:
-            //if(instr->set_prefix & OS)
-             //   return 2;
+            if(instr->set_prefix & OS)
+                return 2;
             return 4;
         case p:
             if(instr->set_prefix & OS) {
@@ -201,6 +201,7 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
                 instr->set_prefix |= DS;
             break;
             case 0x48:
+            case 0x49:
                 if(arch == X64)
                     instr->set_prefix |= OP64;
             break;
