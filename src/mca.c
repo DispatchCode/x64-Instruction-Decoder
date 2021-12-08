@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "mca.h"
 
 static size_t *imm_table[4] = {0, imm_byte_2b,imm_byte_3b_38,imm_byte_3b_3A };
@@ -14,22 +15,22 @@ static inline void mca_vex_decode(struct instruction *instr, enum supported_arch
     instr->set_prefix |= VEX;
 
     if(instr->vex[0] == 0xC5) {
-        #ifdef _ENABLE_VEX_INFO
-            instr->_vex.type = instr->vex[0];
-            instr->_vex.val5 = instr->vex[1];
-        #endif
+#ifdef _ENABLE_VEX_INFO
+        instr->_vex.type = instr->vex[0];
+        instr->_vex.val5 = instr->vex[1];
+#endif
 
-        mca_decode_modrm(instr, arch, data, modrm_2b, imm_byte_2b);
+        mca_decode_modrm(instr, arch, data, modrm_2b, imm_byte_2b, NULL);
     }
     else if(instr->vex[0] == 0xC4) {
 
-        #ifdef _ENABLE_VEX_INFO
-            instr->_vex.type = instr->vex[0];
-            memcpy(&instr->_vex.val4, &instr->vex[1],2);
-        #endif
+#ifdef _ENABLE_VEX_INFO
+        instr->_vex.type = instr->vex[0];
+        memcpy(&instr->_vex.val4, &instr->vex[1],2);
+#endif
 
         int8_t index = instr->vex[1] & 0x3;
-        mca_decode_modrm(instr, arch, data, modrm_table[index], imm_table[index]);
+        mca_decode_modrm(instr, arch, data, modrm_table[index], imm_table[index], NULL);
     }
     // TODO  XOP, 0x8F
 
@@ -105,7 +106,7 @@ static inline int mca_imm_size(struct instruction *instr, size_t val, enum suppo
     }
 }
 
-static void mca_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *start_data, const size_t *modrm_table, const size_t *imm_table) {
+static void mca_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *start_data, const size_t *modrm_table, const size_t *imm_table, const size_t *jcc_table) {
     size_t val;
     if((val = modrm_table[instr->op])) {
         instr->set_field |= MODRM;
@@ -147,6 +148,32 @@ static void mca_decode_modrm(struct instruction *instr, enum supported_architect
         memcpy(&instr->imm, (start_data + instr->length), instr->imm_len);
         instr->length += instr->imm_len;
     }
+
+    uint16_t value = 0;
+    if(jcc_table != NULL && (value = jcc_table[instr->op])) {
+        switch(value) {
+            case j1:
+                instr->jcc_type = JMP_SHORT;
+            break;
+            case j2:
+                instr->jcc_type = JMP_FAR;
+            break;
+            case jc1:
+                instr->jcc_type = JCC_SHORT;
+            break;
+            case jc2:
+                instr->jcc_type = JCC_FAR;
+            default:
+                break; // avoid compiler warnings
+        }
+
+        // 1-byte
+        if(value & 0x10)
+            instr->label = (uint32_t)start_data + ((int8_t)instr->imm) + instr->length;
+        // 4-byte
+        else
+            instr->label = (uint32_t)start_data + ((int32_t)instr->imm) + instr->length;
+    }
 }
 
 static int mca_decode_2b(struct instruction *instr, enum supported_architecture arch, const char *data_src)
@@ -164,9 +191,9 @@ static int mca_decode_2b(struct instruction *instr, enum supported_architecture 
         instr->length++;
 
         if(curr == 0x3A)
-            mca_decode_modrm(instr, arch, data_src, modreg_3b_3A, imm_byte_3b_3A);
+            mca_decode_modrm(instr, arch, data_src, modreg_3b_3A, imm_byte_3b_3A, NULL);
         else
-            mca_decode_modrm(instr, arch, data_src, modreg_3b_38, imm_byte_3b_38);
+            mca_decode_modrm(instr, arch, data_src, modreg_3b_38, imm_byte_3b_38, NULL);
 
         return instr->length;
     }
@@ -174,7 +201,7 @@ static int mca_decode_2b(struct instruction *instr, enum supported_architecture 
     instr->op = curr;
     instr->length++;
 
-    mca_decode_modrm(instr, arch, data_src, modrm_2b, imm_byte_2b);
+    mca_decode_modrm(instr, arch, data_src, modrm_2b, imm_byte_2b, op2b_labels);
 
     return instr->length;
 }
@@ -190,33 +217,33 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
         switch(curr) {
             case 0x26:
                 instr->set_prefix |= ES;
-            break;
+                break;
             case 0x2E:
                 instr->set_prefix |= CS;
-            break;
+                break;
             case 0x36:
                 instr->set_prefix |= SS;
-            break;
+                break;
             case 0x3E:
                 instr->set_prefix |= DS;
-            break;
+                break;
             case 0x48:
             case 0x49:
                 if(arch == X64)
                     instr->set_prefix |= OP64;
-            break;
+                break;
             case 0x64:
                 instr->set_prefix |= FS;
-            break;
+                break;
             case 0x65:
                 instr->set_prefix |= GS;
-            break;
+                break;
             case 0x66:
                 instr->set_prefix |= OS;
-            break;
+                break;
             case 0x67:
                 instr->set_prefix |= AS;
-            break;
+                break;
         }
 
         instr->set_field |= PREFIX;
@@ -235,9 +262,9 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
         else if(curr == 0x0F)
         {
             mca_decode_2b(instr, arch, start_data);
-            #ifdef _ENABLE_RAW_BYTES
+#ifdef _ENABLE_RAW_BYTES
             memcpy(instr->instr, start_data, instr->length);
-            #endif
+#endif
             return instr->length;
         }
 
@@ -251,7 +278,7 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
     {
         instr->length++;
         instr->op = curr;
-        mca_decode_modrm(instr, arch, start_data, modrm_1b, imm_byte_1b);
+        mca_decode_modrm(instr, arch, start_data, modrm_1b, imm_byte_1b, op1b_labels);
     }
 
 #ifdef _ENABLE_RAW_BYTES

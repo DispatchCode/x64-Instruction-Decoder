@@ -96,6 +96,42 @@ static size_t imm_byte_1b[256] = {
         /* F0 */ 0, 0, 0, 0, 0, 0, gr3b, gr3z, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
+/*
+ * first byte:
+ *   - 1: 1-byte
+ *   - 2: 4-byte
+ *
+ * second byte (LSB):
+ *   - 1: Jcc
+ *   - 2: JMP
+ *
+ */
+#define j1  0x12
+#define j2  0x22
+#define jc1 0x11
+#define jc2 0x21
+
+// check if the OP is Jcc or JMP
+static size_t op1b_labels[256] = {
+        //      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+        /* 00 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* 10 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* 20 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* 30 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* 40 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* 50 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* 60 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* 70 */ jc1, jc1, jc1, jc1, jc1, jc1, jc1, jc1, jc1, jc1, jc1, jc1, jc1, jc1, jc1, jc1,
+        /* 80 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* 90 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* A0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* B0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* C0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* D0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* E0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, j2, 0, j1, 0, 0, 0, 0,
+        /* F0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
 //
 // 2-byte OP look-up table
 
@@ -151,6 +187,27 @@ static size_t imm_byte_2b[256] = {
         /* A0 */ 0, 0, 0, 0, b, 0, 0, 0, 0, 0, 0, 0, b, 0, 0, 0,
         /* B0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, b, 0, 0, 0, 0, 0,
         /* C0 */ 0, 0, b, 0, b, b, b, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* D0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* E0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* F0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
+// check if the OP is Jcc or JMP
+static size_t op2b_labels[256] = {
+        //      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+        /* 00 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* 10 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* 20 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* 30 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* 40 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* 50 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* 60 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* 70 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* 80 */ jc2, jc2, jc2, jc2, jc2, jc2, jc2, jc2, jc2, jc2, jc2, jc2, jc2, jc2, jc2, jc2,
+        /* 90 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* A0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* B0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        /* C0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         /* D0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         /* E0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         /* F0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
@@ -250,6 +307,13 @@ static size_t imm_byte_3b_3A[256] = {
         /* F0 */ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
+enum jmp_type {
+    JCC_SHORT = 1,  // 1-byte JCC
+    JCC_FAR   = 2,  // 2-byte JCC, 4bytes imm
+    JMP_SHORT = 4,  // 1-byte JMP
+    JMP_FAR   = 8,  // 4-byte JMP
+};
+
 enum prefixes {
     ES = 1,  // 0x26
     CS = 2,  // 0x2E
@@ -336,6 +400,7 @@ struct vex_info {
 struct instruction {
     uint64_t disp;
     uint64_t imm;
+    uint32_t label;
 
 #ifdef _ENABLE_VEX_INFO
     struct vex_info _vex;
@@ -390,6 +455,7 @@ struct instruction {
 
     uint16_t set_prefix; // bit mask
     uint16_t set_field;
+    uint8_t  jcc_type;
 
     int8_t vex_cnt;
     int8_t prefix_cnt;
@@ -400,7 +466,7 @@ struct instruction {
 // Functions
 //
 int mca_decode(struct instruction *instr, enum supported_architecture arch, char *data_src, int offset);
-static void mca_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *data_src, const size_t *modrm_table, const size_t *imm_table);
+static void mca_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *data_src, const size_t *modrm_table, const size_t *imm_table, const size_t *jcc_table);
 static inline bool mca_check_sib(uint8_t mod, uint8_t rm);
 static inline int mca_displacement_size(uint8_t mod, uint8_t rm);
 static inline int mca_imm_size(struct instruction *instr, size_t val, enum supported_architecture arch);

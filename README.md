@@ -107,6 +107,7 @@ Here below how you can use the struct. More infos and the other structs can be f
 | `modrm`           | `union`           | Union of four fields: `value`, `rm`, `reg` and `mod` (see [below](#modrm-union)). |
 | `disp`            | `uint64_t`        | Displacement field |
 | `imm`             | `uint64_t`        | Immediate value (a number) |
+| `label`           | `uint32_t`        | Address of Jcc/JMP, if present |
 | `_vex`            | `struct vex_info` | Available only if [`_ENABLED_VEX_INFO`](#enabling--disabling-features) is defined. Described [below](#vex_info-struct). |
 | `instr`           | `uint8_t[15]`     | Available only if [`_ENABLE_RAW_BYTES`](#enabling--disabling-features) is defined. |
 | `sib`             | `union`           | Union of four fields: `value`, `base`, `index` and `scaled` (see [below](#sib-union)). |
@@ -118,6 +119,7 @@ Here below how you can use the struct. More infos and the other structs can be f
 | `prefix_cnt`      | `int8_t`          | Count how many prefixes are available |
 | `set_prefix`      | `uint16_t`        | A field against which is possible to check if a determined prefix (belonging to `prefixes` enum) is present. |
 | `set_field`       | `uint16_t`        | A field against which is possible to check if a determined feature (belonging to `instruction_feature` enum) is available (e.g. FPU, SIB, DISP,...) |
+| `jcc_type`        | `uint8_t`         | The type of jump: Jcc or JMP with 1 or 2-bytes (refer to jmp_type enum) 
 
 ___
 
