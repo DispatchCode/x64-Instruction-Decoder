@@ -28,6 +28,7 @@ ___
       - [A practical example: sum of two vectors using SIMD instruction](#a-practical-example-sum-of-two-vectors-using-simd-instruction)
       - [Another example: architecture x64, VEX prefix with YMM register](#another-example-architecture-x64-vex-prefix-with-ymm-register)
   * [Enabling / Disabling features](#enabling--disabling-features)
+  * [Function Length detection](#find-function-length) 🌟*New❗*🌟
   * [Tests](#tests)
   * [Useful resources](#useful-resources)
   * [Notes](#notes)
@@ -358,6 +359,28 @@ Some features can be toggled by adding / removing comments on these lines:
 |:-------------------:|:------------|
 | `_ENABLE_RAW_BYTES` | Enabling this, allows storing each instruction into the `instr` struct passed to `mca_decode` (`instr.instr`); |
 | `_ENABLE_VEX_INFO`  | Enabling this, allows storing VEX infos into `instr`; see previous example for more |
+
+## Find length of a function
+An extension has been added to compute the length of a specified function:
+```C
+pFunctionInfo getFunctionLength(char *buffer, enum supported_architecture arch);
+```
+`pFunctionInfo` is an anonymous struct defined as follows:
+
+| Field Name        | Type       | Description |
+|-------------------|:----------:|-------------|
+| `pVisited`     | `vector *`  | A pointer to a `vector` data structure |
+| `length`   | `int`  | The length of the function in bytes  |
+
+The `vector` data structure is a dynamic array with three members:
+
+| Field Name        | Type       | Description |
+|-------------------|:----------:|-------------|
+| `vect`     | `uint32_t *`  | contains the detected addresses  |
+| `size`   | `int`  | allocated memory of the array |
+| `tos`   | `int`  | index of the last inserted element |
+
+An example can be found in `main.c`, function `in_memory()`.
 
 ## Tests
 
