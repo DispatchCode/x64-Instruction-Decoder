@@ -120,8 +120,8 @@ void binary_file(char *file_name, int architecture) {
 }
 
 void in_memory(int arch) {
-    printf("Reading function machine code at address 0x%X...",(uint32_t)example3);
-    pFunctionInfo func_info = getFunctionLength(example3, X86);
+    printf("Reading function machine code at address 0x%X...",(uint32_t) example1);
+    pFunctionInfo func_info = getFunctionLength(example1, X86);
     printf(" Done!\nFunction Length: %d-bytes, decoded %d instructions.\n", func_info->length, func_info->pVisited->tos);
     printf("\nAddresses of instructions that has been decoded:\n");
 
@@ -141,8 +141,8 @@ void in_memory(int arch) {
 
     while(offset <= func_info->length) {
         struct instruction instr;
-        mca_decode(&instr, arch, (char*)example3, offset);
-        printf("Instr. VA: 0x%X\n",(uint32_t)(example3+offset));
+        mca_decode(&instr, arch, (char*)example1, offset);
+        printf("Instr. VA: 0x%X\n",(uint32_t)((uint32_t)example1+offset));
         instruction_info(instr);
 
         offset += instr.length;

@@ -382,6 +382,9 @@ The `vector` data structure is a dynamic array with three members:
 
 An example can be found in `main.c`, function `in_memory()`.
 
+> :information_source: **Notes**
+> Jump Table are not handled; be careful when you use switch case and compiling with MSVC (GCC/MinGw seems use other techniques).
+> Handling jmp table require heuristics (eg. as IDA do and other tools) and more info on the target.
 ## Tests
 
 After googling for a better solution, I came back with one of the first things I was thinking: assembly.
