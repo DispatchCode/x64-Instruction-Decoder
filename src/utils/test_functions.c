@@ -33,7 +33,7 @@ int example(int n) {
 int example1(int n) {
     printf("example1");
     int c = 0;
-    for(int i=0; i<10; i++) {
+    for(int i=1; i<10; i++) {
         for(int j=i; j<n; j++) {
             switch (n%i) {
                 case 2:
