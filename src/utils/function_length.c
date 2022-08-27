@@ -4,7 +4,7 @@
 vector* instrFlowLength(char *pMemory, enum supported_architecture arch)
 {
     int bytes_len = 0;
-    uint32_t addr = ((int)pMemory);
+    uint64_t addr = ((int64_t)pMemory);
 
     queue *future_paths = queue_init();
     vector *visited = vector_init();
@@ -14,6 +14,11 @@ vector* instrFlowLength(char *pMemory, enum supported_architecture arch)
     {
         struct instruction instr;
         mca_decode(&instr, arch,tmp_addr,0);
+
+        for (int i = 0; i < instr.length; i++) {
+            printf("%X ", instr.instr[i]);
+        }
+        printf("\n");
 
         if(instr.op == 0xc3 || instr.op == 0xCC)
         {
@@ -28,8 +33,9 @@ vector* instrFlowLength(char *pMemory, enum supported_architecture arch)
             vector_push_back(visited,addr);
 
             tmp_addr = 0;
-            tmp_addr += queue_dequeue(future_paths);
-            addr = (uint32_t) tmp_addr;
+            uint64_t tmp = queue_dequeue(future_paths);
+            tmp_addr += tmp;
+            addr = tmp;
         }
         else
         {
@@ -41,8 +47,9 @@ vector* instrFlowLength(char *pMemory, enum supported_architecture arch)
                 }
 
                 tmp_addr = 0;
-                tmp_addr += queue_dequeue(future_paths);
-                addr = (uint32_t) tmp_addr;
+                uint64_t tmp = queue_dequeue(future_paths);
+                tmp_addr += tmp;
+                addr = tmp;
             }
             else
             {
@@ -51,8 +58,9 @@ vector* instrFlowLength(char *pMemory, enum supported_architecture arch)
 
                 if (instr.jcc_type == JCC_FAR || instr.jcc_type == JCC_SHORT)
                 {
-                    if (queue_find(future_paths,instr.label) == 0)
-                        queue_enqueue(future_paths,instr.label);
+                    if (queue_find(future_paths, instr.label) == 0) {
+                        queue_enqueue(future_paths, instr.label);
+                    }
                 }
 
                 bytes_len += instr.length;
@@ -75,7 +83,7 @@ vector* instrFlowLength(char *pMemory, enum supported_architecture arch)
 
 int compare(const void * n1, const void * n2)
 {
-    return (int)( *(uint32_t *)n1 - *(uint32_t*)n2 );
+    return (int)( *(uint64_t*)n1 - *(uint64_t*)n2 );
 }
 
 pFunctionInfo getFunctionLength(char *buffer, enum supported_architecture arch)
@@ -83,10 +91,10 @@ pFunctionInfo getFunctionLength(char *buffer, enum supported_architecture arch)
     pFunctionInfo f_info = calloc(1,sizeof(functionInfo));
     vector *visited = instrFlowLength(buffer, arch);
 
-    qsort(visited->vect, visited->tos, sizeof(uint32_t), compare);
+    qsort(visited->vect, visited->tos, sizeof(uint64_t), compare);
 
-    uint32_t min = visited->vect[0];
-    uint32_t max = visited->vect[visited->tos-1];
+    uint64_t min = visited->vect[0];
+    uint64_t max = visited->vect[visited->tos-1];
 
     f_info->pVisited = visited;
     f_info->length = (int)(max-min);

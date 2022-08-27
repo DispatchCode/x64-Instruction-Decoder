@@ -172,7 +172,7 @@ static void mca_decode_modrm(struct instruction *instr, enum supported_architect
             instr->label = (uint32_t)start_data + ((int8_t)instr->imm) + instr->length;
         // 4-byte
         else
-            instr->label = (uint32_t)start_data + ((int32_t)instr->imm) + instr->length;
+            instr->label = (uint64_t)start_data + ((int64_t)instr->imm) + instr->length;
     }
 }
 
