@@ -14,7 +14,7 @@ enum supported_architecture {
 };
 
 enum decode_status {
-    ERROR = 0,
+    MCA_ERROR = 0,
 };
 
 #define ALL (X86 | X64)
@@ -400,7 +400,7 @@ struct vex_info {
 struct instruction {
     uint64_t disp;
     uint64_t imm;
-    uint32_t label;
+    uint64_t label;
 
 #ifdef _ENABLE_VEX_INFO
     struct vex_info _vex;
