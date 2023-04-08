@@ -7,3 +7,9 @@ Makefile
 cmake_install.cmake
 CMakeFiles/
 CMakeCache.txt
+*.obj
+*.exe
+*.json
+.fleet/
+.vs/
+out/
