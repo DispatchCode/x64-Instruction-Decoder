@@ -1,10 +1,10 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-# MCA ~ Machine Code Analyzer
+# x64ID ~ x64 Instruction Decoder
 
 A x86/x64 machine code decoder. It is useful to get instructions' length and identify each of its fields.
 
-Here some scenarios where MCA can be used:
+Here some scenarios where x64ID can be used:
 
 - write your disassembler from scratch
 - as a base for a VM protection [<sup>[1]</sup>](#user-content-res1).
@@ -15,7 +15,7 @@ Here some scenarios where MCA can be used:
 
 ___
 
-- [MCA ~ Machine Code Analyzer](#mca--machine-code-analyzer)
+- [x64ID ~ x64 Instruction Decoder](#x64id--machine-code-analyzer)
   * [Supported architectures and features](#supported-architectures-and-features)
     + [Features on development](#features-on-development)
   * [API](#api)
@@ -74,10 +74,10 @@ ___
 
 ## API
 
-MCA exposes only one function and some structs to complete its goal:
+x64ID exposes only one function and some structs to complete its goal:
 
 ```C
-int mca_decode(struct instruction *instr, enum supported_architecture arch, char *data_src, int offset);
+int x64id_decode(struct instruction *instr, enum supported_architecture arch, char *data_src, int offset);
 ```
 
 | Parameter      | Type     | Explanation | Required |
@@ -89,16 +89,16 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
 
 **Return**:
 
-`mca_decode` returns the length of the decoded instruction. Its value can also be accessed from `instr.length`.
+`x64id_decode` returns the length of the decoded instruction. Its value can also be accessed from `instr.length`.
 
 > :information_source: **Notes**
-> Internally, MCA does not use dynamic allocation to avoid overhead.
+> Internally, x64ID does not use dynamic allocation to avoid overhead.
 
 ___
 
 ### Instruction struct
 
-Here below how you can use the struct. More infos and the other structs can be found in the [header file](https://github.com/DispatchCode/Machine-Code-Analyzer/blob/master/src/mca.h#L355).
+Here below how you can use the struct. More infos and the other structs can be found in the [header file](https://github.com/DispatchCode/Machine-Code-Analyzer/blob/master/src/x64id.h#L355).
 
 | Field Name        | Type              | Description |
 |-------------------|:-----------------:|-------------|
@@ -242,7 +242,7 @@ Address   Hex dump                    Command                                  C
 
 ```
 
-We can write a sample code that uses MCA to read and print the instructions.
+We can write a sample code that uses x64ID to read and print the instructions.
 
 ```C
 int offset = 0x4bc;
@@ -251,7 +251,7 @@ int byte_reads = 0;
 
 while(byte_reads <= parse_bytes) {
     struct instruction instr;
-    mca_decode(&instr, arch, (char*)data_buffer, offset);
+    x64id_decode(&instr, arch, (char*)data_buffer, offset);
     
     for(int i=0; i<instr.length; i++)
         printf("%02X ", instr.instr[i]);
@@ -279,7 +279,7 @@ C7 85 68 FF FF FF 00 00 00 00
 ```
 
 Of course you can gather more information about each instruction.
-Here below a sample detailed report created by MCA processing of two of the instructions of the set above, inst. 1 and inst. 10:
+Here below a sample detailed report created by x64ID processing of two of the instructions of the set above, inst. 1 and inst. 10:
 
 ```
 /**
@@ -324,7 +324,7 @@ As compiled output we'll get:
 
 `C5 FE 12 0C AD 00 10 00 00`
 
-Output after MCA parsing:
+Output after x64ID parsing:
 
 ```
 RAW bytes (hex): C5 FE 12 0C AD 00 10 00 00
@@ -357,7 +357,7 @@ Some features can be toggled by adding / removing comments on these lines:
 
 | Define              | Description |
 |:-------------------:|:------------|
-| `_ENABLE_RAW_BYTES` | Enabling this, allows storing each instruction into the `instr` struct passed to `mca_decode` (`instr.instr`); |
+| `_ENABLE_RAW_BYTES` | Enabling this, allows storing each instruction into the `instr` struct passed to `x64id_decode` (`instr.instr`); |
 | `_ENABLE_VEX_INFO`  | Enabling this, allows storing VEX infos into `instr`; see previous example for more |
 
 ## Find length of a function

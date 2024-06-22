@@ -1,5 +1,5 @@
-#ifndef MCA_QUEUE_H
-#define MCA_QUEUE_H
+#ifndef x64ID_QUEUE_H
+#define x64ID_QUEUE_H
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -20,4 +20,4 @@ void queue_free(queue *q);
 int queue_empty(queue *q);
 int queue_find(queue *q, uint64_t value);
 
-#endif //MCA_QUEUE_H
+#endif //x64ID_QUEUE_H

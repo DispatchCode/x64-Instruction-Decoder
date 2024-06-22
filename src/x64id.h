@@ -1,5 +1,5 @@
-#ifndef MCA_H
-#define MCA_H
+#ifndef x64id_H
+#define x64id_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -14,7 +14,7 @@ enum supported_architecture {
 };
 
 enum decode_status {
-    MCA_ERROR = 0,
+    x64id_ERROR = 0,
 };
 
 #define ALL (X86 | X64)
@@ -465,13 +465,13 @@ struct instruction {
 //
 // Functions
 //
-int mca_decode(struct instruction *instr, enum supported_architecture arch, char *data_src, int offset);
-static void mca_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *data_src, const size_t *modrm_table, const size_t *imm_table, const size_t *jcc_table);
-static inline bool mca_check_sib(uint8_t mod, uint8_t rm);
-static inline int mca_displacement_size(uint8_t mod, uint8_t rm);
-static inline int mca_imm_size(struct instruction *instr, size_t val, enum supported_architecture arch);
-static int mca_decode_2b(struct instruction *instr, enum supported_architecture arch, const char *data_src);
-static inline int mca_vex_size(struct instruction *instr, enum supported_architecture arch, const char *data);
-static inline void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, uint8_t vex_size);
+int x64id_decode(struct instruction *instr, enum supported_architecture arch, char *data_src, int offset);
+static void x64id_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *data_src, const size_t *modrm_table, const size_t *imm_table, const size_t *jcc_table);
+static inline bool x64id_check_sib(uint8_t mod, uint8_t rm);
+static inline int x64id_displacement_size(uint8_t mod, uint8_t rm);
+static inline int x64id_imm_size(struct instruction *instr, size_t val, enum supported_architecture arch);
+static int x64id_decode_2b(struct instruction *instr, enum supported_architecture arch, const char *data_src);
+static inline int x64id_vex_size(struct instruction *instr, enum supported_architecture arch, const char *data);
+static inline void x64id_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, uint8_t vex_size);
 
-#endif //MCA_H
+#endif //x64id_H

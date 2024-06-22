@@ -1,11 +1,11 @@
-#ifndef MCA_FUNCTION_LENGTH_H
-#define MCA_FUNCTION_LENGTH_H
+#ifndef x64ID_FUNCTION_LENGTH_H
+#define x64ID_FUNCTION_LENGTH_H
 
 #include <stdio.h>
 
 #include "../vector.h"
 #include "../queue.h"
-#include "../mca.h"
+#include "../x64id.h"
 
 typedef struct {
     vector *pVisited;
@@ -14,4 +14,4 @@ typedef struct {
 
 pFunctionInfo getFunctionLength(char *buffer, enum supported_architecture arch);
 
-#endif //MCA_FUNCTION_LENGTH_H
+#endif //x64ID_FUNCTION_LENGTH_H

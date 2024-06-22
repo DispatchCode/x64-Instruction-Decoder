@@ -1,5 +1,5 @@
-#ifndef MCA_VECTOR_H
-#define MCA_VECTOR_H
+#ifndef x64ID_VECTOR_H
+#define x64ID_VECTOR_H
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -17,4 +17,4 @@ void vector_push_back(vector *v, uint64_t value);
 void vector_free(vector *v);
 int vector_find(vector *v, uint64_t value);
 
-#endif //MCA_VECTOR_H
+#endif //x64ID_VECTOR_H
