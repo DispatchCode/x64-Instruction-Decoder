@@ -13,3 +13,6 @@ CMakeCache.txt
 .fleet/
 .vs/
 out/
+.cache/
+x64id
+x64id_test

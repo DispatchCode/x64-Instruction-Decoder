@@ -109,7 +109,7 @@ void binary_file(char *file_name, int architecture) {
 
     while(byte_reads <= parse_bytes) {
         struct instruction instr;
-        mca_decode(&instr, arch, (char*)data_buffer, offset);
+        x64id_decode(&instr, arch, (char*)data_buffer, offset);
 
         for(int i=0; i<instr.length; i++)
             printf("%02X ", instr.instr[i]);
@@ -141,7 +141,7 @@ void in_memory(int arch) {
 
     while(offset <= func_info->length) {
         struct instruction instr;
-        mca_decode(&instr, arch, (char*)example1, offset);
+        x64id_decode(&instr, arch, (char*)example1, offset);
         printf("Instr. VA: 0x%X\n",(uint32_t)((uint32_t)example1+offset));
         instruction_info(instr);
 

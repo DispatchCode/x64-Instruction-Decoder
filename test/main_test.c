@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "../src/mca.h"
+#include "../src/x64id.h"
 
 /*
  * Please, take a look at README before edit this file or tests (.asm) files
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
             printf("%02X ", buf[i]);
         printf("\n");
 
-        offset = mca_decode(&instr, arch, (char*)buf, 0);
+        offset = x64id_decode(&instr, arch, (char*)buf, 0);
         instruction_info(instr);
 
         // instruction may have 0xCC bytes,

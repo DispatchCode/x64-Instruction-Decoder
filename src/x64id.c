@@ -1,10 +1,10 @@
 #include <stdio.h>
-#include "mca.h"
+#include "x64id.h"
 
 static size_t *imm_table[4] = {0, imm_byte_2b,imm_byte_3b_38,imm_byte_3b_3A };
 static size_t *modrm_table[4] = {0, modrm_2b,modreg_3b_38,modreg_3b_3A };
 
-static inline void mca_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, uint8_t vex_size) {
+static inline void x64id_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, uint8_t vex_size) {
     memcpy(instr->vex, (data+instr->length), vex_size);
     instr->vex_cnt += vex_size;
     instr->length  += vex_size;
@@ -20,7 +20,7 @@ static inline void mca_vex_decode(struct instruction *instr, enum supported_arch
         instr->_vex.val5 = instr->vex[1];
 #endif
 
-        mca_decode_modrm(instr, arch, data, modrm_2b, imm_byte_2b, NULL);
+        x64id_decode_modrm(instr, arch, data, modrm_2b, imm_byte_2b, NULL);
     }
     else if(instr->vex[0] == 0xC4) {
 
@@ -30,13 +30,13 @@ static inline void mca_vex_decode(struct instruction *instr, enum supported_arch
 #endif
 
         int8_t index = instr->vex[1] & 0x3;
-        mca_decode_modrm(instr, arch, data, modrm_table[index], imm_table[index], NULL);
+        x64id_decode_modrm(instr, arch, data, modrm_table[index], imm_table[index], NULL);
     }
     // TODO  XOP, 0x8F
 
 }
 
-static inline int mca_vex_size(struct instruction *instr, enum supported_architecture arch, const char *data) {
+static inline int x64id_vex_size(struct instruction *instr, enum supported_architecture arch, const char *data) {
     uint8_t curr_byte = (uint8_t) *(data + instr->length);
     uint8_t next_byte = (uint8_t) *(data + instr->length + 1);
 
@@ -50,11 +50,11 @@ static inline int mca_vex_size(struct instruction *instr, enum supported_archite
     return 0;
 }
 
-static inline bool mca_check_sib(uint8_t mod, uint8_t rm) {
+static inline bool x64id_check_sib(uint8_t mod, uint8_t rm) {
     return mod < 3 && rm == 4;
 }
 
-static inline int mca_displacement_size(uint8_t mod, uint8_t rm) {
+static inline int x64id_displacement_size(uint8_t mod, uint8_t rm) {
     if((mod == 0x02) || (rm == 0x05 && !mod))
         return 4;
     else if(mod == 0x01)
@@ -62,7 +62,7 @@ static inline int mca_displacement_size(uint8_t mod, uint8_t rm) {
     return 0;
 }
 
-static inline int mca_imm_size(struct instruction *instr, size_t val, enum supported_architecture arch) {
+static inline int x64id_imm_size(struct instruction *instr, size_t val, enum supported_architecture arch) {
     switch (val) {
         case b:
             return 1;
@@ -106,7 +106,7 @@ static inline int mca_imm_size(struct instruction *instr, size_t val, enum suppo
     }
 }
 
-static void mca_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *start_data, const size_t *modrm_table, const size_t *imm_table, const size_t *jcc_table) {
+static void x64id_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *start_data, const size_t *modrm_table, const size_t *imm_table, const size_t *jcc_table) {
     size_t val;
     if((val = modrm_table[instr->op])) {
         instr->set_field |= MODRM;
@@ -121,7 +121,7 @@ static void mca_decode_modrm(struct instruction *instr, enum supported_architect
 
         uint8_t mod_val = instr->modrm.bits.mod, rm_val = instr->modrm.bits.rm;
 
-        if(mca_check_sib(instr->modrm.bits.mod,instr->modrm.bits.rm)) {
+        if(x64id_check_sib(instr->modrm.bits.mod,instr->modrm.bits.rm)) {
             instr->set_field |= SIB;
 
             instr->sib.value = (uint8_t) *(start_data + instr->length);
@@ -134,7 +134,7 @@ static void mca_decode_modrm(struct instruction *instr, enum supported_architect
             }
         }
 
-        instr->disp_len = mca_displacement_size(mod_val, rm_val);
+        instr->disp_len = x64id_displacement_size(mod_val, rm_val);
         if(instr->disp_len || instr->set_field & DISP) {
             memcpy(&instr->disp, (start_data + instr->length), instr->disp_len);
             instr->length += instr->disp_len;
@@ -142,7 +142,7 @@ static void mca_decode_modrm(struct instruction *instr, enum supported_architect
         }
     }
 
-    instr->imm_len = mca_imm_size(instr, imm_table[instr->op], arch);
+    instr->imm_len = x64id_imm_size(instr, imm_table[instr->op], arch);
     if(instr->imm_len) {
         instr->set_field |= IMM;
         memcpy(&instr->imm, (start_data + instr->length), instr->imm_len);
@@ -176,7 +176,7 @@ static void mca_decode_modrm(struct instruction *instr, enum supported_architect
     }
 }
 
-static int mca_decode_2b(struct instruction *instr, enum supported_architecture arch, const char *data_src)
+static int x64id_decode_2b(struct instruction *instr, enum supported_architecture arch, const char *data_src)
 {
     instr->set_prefix |= ESCAPE;
     uint8_t curr = (uint8_t) *(data_src + instr->length);
@@ -191,9 +191,9 @@ static int mca_decode_2b(struct instruction *instr, enum supported_architecture 
         instr->length++;
 
         if(curr == 0x3A)
-            mca_decode_modrm(instr, arch, data_src, modreg_3b_3A, imm_byte_3b_3A, NULL);
+            x64id_decode_modrm(instr, arch, data_src, modreg_3b_3A, imm_byte_3b_3A, NULL);
         else
-            mca_decode_modrm(instr, arch, data_src, modreg_3b_38, imm_byte_3b_38, NULL);
+            x64id_decode_modrm(instr, arch, data_src, modreg_3b_38, imm_byte_3b_38, NULL);
 
         return instr->length;
     }
@@ -201,12 +201,12 @@ static int mca_decode_2b(struct instruction *instr, enum supported_architecture 
     instr->op = curr;
     instr->length++;
 
-    mca_decode_modrm(instr, arch, data_src, modrm_2b, imm_byte_2b, op2b_labels);
+    x64id_decode_modrm(instr, arch, data_src, modrm_2b, imm_byte_2b, op2b_labels);
 
     return instr->length;
 }
 
-int mca_decode(struct instruction *instr, enum supported_architecture arch, char *data, int offset) {
+int x64id_decode(struct instruction *instr, enum supported_architecture arch, char *data, int offset) {
     memset(instr, 0, sizeof(struct instruction));
 
     char *start_data = (data + offset);
@@ -261,7 +261,7 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
         }
         else if(curr == 0x0F)
         {
-            mca_decode_2b(instr, arch, start_data);
+            x64id_decode_2b(instr, arch, start_data);
 #ifdef _ENABLE_RAW_BYTES
             memcpy(instr->instr, start_data, instr->length);
 #endif
@@ -271,14 +271,14 @@ int mca_decode(struct instruction *instr, enum supported_architecture arch, char
         curr = (uint8_t) *(start_data + instr->length);
     }
 
-    size_t vex_size = mca_vex_size(instr, arch, start_data);
+    size_t vex_size = x64id_vex_size(instr, arch, start_data);
     if(vex_size)
-        mca_vex_decode(instr, arch, start_data, vex_size);
+        x64id_vex_decode(instr, arch, start_data, vex_size);
     else
     {
         instr->length++;
         instr->op = curr;
-        mca_decode_modrm(instr, arch, start_data, modrm_1b, imm_byte_1b, op1b_labels);
+        x64id_decode_modrm(instr, arch, start_data, modrm_1b, imm_byte_1b, op1b_labels);
     }
 
 #ifdef _ENABLE_RAW_BYTES

@@ -13,7 +13,7 @@ vector* instrFlowLength(char *pMemory, enum supported_architecture arch)
     while(true)
     {
         struct instruction instr;
-        mca_decode(&instr, arch,tmp_addr,0);
+        x64id_decode(&instr, arch,tmp_addr,0);
 
         for (int i = 0; i < instr.length; i++) {
             printf("%X ", instr.instr[i]);
