@@ -1,10 +1,10 @@
 #include "function_length.h"
 
 
-vector* instrFlowLength(char *pMemory, enum supported_architecture arch)
+vector* instrFlowLength(char *pMemory, const enum supported_architecture arch)
 {
     int bytes_len = 0;
-    uint64_t addr = ((int64_t)pMemory);
+    uint64_t addr = (uint64_t)pMemory;
 
     queue *future_paths = queue_init();
     vector *visited = vector_init();
@@ -13,77 +13,66 @@ vector* instrFlowLength(char *pMemory, enum supported_architecture arch)
     while(true)
     {
         struct instruction instr;
-        x64id_decode(&instr, arch,tmp_addr,0);
-
+        x64id_decode(&instr, arch, tmp_addr, 0);
+/*
         for (int i = 0; i < instr.length; i++) {
             printf("%X ", instr.instr[i]);
         }
         printf("\n");
-
-        if(instr.op == 0xc3 || instr.op == 0xCC)
+*/
+        if(instr.op == 0xc3 || instr.op == 0xCC) // RET or INT3
         {
+            vector_push_back(visited, addr);
             if(queue_empty(future_paths))
             {
-                if(instr.op == 0xC3)
-                    vector_push_back(visited,addr+instr.length);
-
                 queue_free(future_paths);
                 return visited;
             }
-            vector_push_back(visited,addr);
 
-            tmp_addr = 0;
-            uint64_t tmp = queue_dequeue(future_paths);
-            tmp_addr += tmp;
-            addr = tmp;
+            uint64_t next_addr = queue_dequeue(future_paths);
+            tmp_addr = (char *)next_addr;
+            addr = next_addr;
+            continue;
         }
-        else
+
+        if(vector_find(visited, addr))
         {
-            if(vector_find(visited, addr))
+            if(queue_empty(future_paths))
             {
-                if(queue_empty(future_paths)) {
-                    queue_free(future_paths);
-                    return visited;
-                }
-
-                tmp_addr = 0;
-                uint64_t tmp = queue_dequeue(future_paths);
-                tmp_addr += tmp;
-                addr = tmp;
+                queue_free(future_paths);
+                return visited;
             }
-            else
+
+            uint64_t next_addr = queue_dequeue(future_paths);
+            tmp_addr = (char *)next_addr;
+            addr = next_addr;
+            continue;
+        }
+
+        vector_push_back(visited, addr);
+        bytes_len += instr.length;
+        addr += instr.length;
+        tmp_addr += instr.length;
+
+        if (instr.jcc_type == JCC_FAR || instr.jcc_type == JCC_SHORT)
+        {
+            if (!queue_find(future_paths, instr.label))
             {
-
-                vector_push_back(visited, addr);
-
-                if (instr.jcc_type == JCC_FAR || instr.jcc_type == JCC_SHORT)
-                {
-                    if (queue_find(future_paths, instr.label) == 0) {
-                        queue_enqueue(future_paths, instr.label);
-                    }
-                }
-
-                bytes_len += instr.length;
-                addr += instr.length;
-                tmp_addr += instr.length;
-
-                if (instr.jcc_type == JMP_FAR || instr.jcc_type == JMP_SHORT)
-                {
-                    if (queue_find(future_paths,addr))
-                        queue_enqueue(future_paths,addr);
-
-                    tmp_addr = 0;
-                    tmp_addr += instr.label;
-                    addr = instr.label;
-                }
+                queue_enqueue(future_paths, instr.label);
             }
+        }
+
+        if (instr.jcc_type == JMP_FAR || instr.jcc_type == JMP_SHORT)
+        {
+            addr = instr.label;
+            tmp_addr = (char *)addr;
         }
     }
 }
 
 int compare(const void * n1, const void * n2)
 {
-    return (int)( *(uint64_t*)n1 - *(uint64_t*)n2 );
+    return *(uint64_t*)n1 - *(uint64_t*)n2;
 }
 
 pFunctionInfo getFunctionLength(char *buffer, enum supported_architecture arch)
