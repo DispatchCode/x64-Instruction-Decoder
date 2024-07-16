@@ -39,6 +39,10 @@ int queue_empty(queue *q)
     return q->tos == 0;
 }
 
+int queue_size(queue *q) {
+    return q->tos;
+}
+
 int queue_find(queue *q, uint64_t value)
 {
     for(int i=0; i<q->tos; i++)
