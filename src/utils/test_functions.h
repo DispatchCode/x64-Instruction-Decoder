@@ -6,5 +6,6 @@ int example(int n);
 int example1(int n);
 int example2(int n);
 double example3(double n);
+int example4(int n);
 
 #endif //x64ID_TEST_FUNCTIONS_H
