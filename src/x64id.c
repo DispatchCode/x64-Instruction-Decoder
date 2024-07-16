@@ -114,7 +114,7 @@ static void x64id_decode_modrm(struct instruction *instr, enum supported_archite
         if(val == X87_FPU)
             instr->set_field |= FPU;
 
-        uint8_t curr = (uint8_t) *(start_data + instr->length);
+        uint8_t curr = *(start_data + instr->length);
 
         instr->modrm.value = curr;
         instr->length++;
@@ -150,7 +150,7 @@ static void x64id_decode_modrm(struct instruction *instr, enum supported_archite
     }
 
     uint16_t value = 0;
-    if(jcc_table != NULL && (value = jcc_table[instr->op])) {
+    if(jcc_table != NULL && ((value = jcc_table[instr->op]))) {
         switch(value) {
             case j1:
                 instr->jcc_type = JMP_SHORT;
@@ -169,7 +169,7 @@ static void x64id_decode_modrm(struct instruction *instr, enum supported_archite
 
         // 1-byte
         if(value & 0x10)
-            instr->label = (uint32_t)start_data + ((int8_t)instr->imm) + instr->length;
+            instr->label = (uint64_t)start_data + ((int8_t)instr->imm) + instr->length;
         // 4-byte
         else
             instr->label = (uint64_t)start_data + ((int64_t)instr->imm) + instr->length;
@@ -179,7 +179,7 @@ static void x64id_decode_modrm(struct instruction *instr, enum supported_archite
 static int x64id_decode_2b(struct instruction *instr, enum supported_architecture arch, const char *data_src)
 {
     instr->set_prefix |= ESCAPE;
-    uint8_t curr = (uint8_t) *(data_src + instr->length);
+    uint8_t curr = *(data_src + instr->length);
 
     if(curr == 0x3A || curr == 0x38)
     {
@@ -210,7 +210,7 @@ int x64id_decode(struct instruction *instr, enum supported_architecture arch, ch
     memset(instr, 0, sizeof(struct instruction));
 
     char *start_data = (data + offset);
-    uint8_t curr = (uint8_t) *(start_data);
+    uint8_t curr = *start_data;
 
     while(x86_64_prefix[curr] & arch)
     {

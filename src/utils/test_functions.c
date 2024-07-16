@@ -31,7 +31,7 @@ int example(int n) {
 }
 
 int example1(int n) {
-    printf("example1");
+    printf("example 1");
     int c = 0;
     for(int i=1; i<10; i++) {
         for(int j=i; j<n; j++) {
@@ -79,4 +79,37 @@ double example3(double n) {
 
     free(array);
     return avg/100;
+}
+
+int example4(int scelta) {
+    printf("example 4");
+    int n = 0;
+
+    switch(scelta)
+    {
+        case 1:
+            printf("Opzione 1\n");
+            n = 1;
+        break;
+        case 2:
+            printf("Opzione 2\n");
+            n = 2;
+        break;
+        case 3:
+            printf("Opzione 3\n");
+            n = 3;
+        break;
+        case 4:
+            printf("Opzione 4\n");
+            n = 4;
+        break;
+        case 5:
+            printf("Opzione 5\n");
+            n = 5;
+        break;
+        default:
+            printf("Opzioni non individuate\n");
+    }
+
+    return n;
 }
