@@ -1,0 +1,80 @@
+##########################################
+#
+#			INSTR. DEFINITIONS           
+# 0) FORMAT
+# 
+#   prefix | opcode | mnemonic | handler
+#
+# 1) Handlers
+#
+# Handler is defined in the C code.
+# To keep things simple and not reinvent the wheel,
+# we use the same Intel terminology.
+#
+# Ev_Gv | Gv_Ev
+# Eb_Gb | Gb_Eb
+# Eb_Ib 
+# Jb 
+# Jz
+# Reg_In_Opcode 
+# None
+# ..... 
+#
+# 2) Prefixes
+# Each line starts with a prefix: this can be none (0x00)
+# or one or more between 0x0f, 0x66, 0xf2, 0xf3.
+#
+
+# ADD 0x00 - 0x05
+00 | 0x01 | add | Ev_Gv
+00 | 0x03 | add | Gv_Ev
+00 | 0x11 | adc | Ev_Gv
+00 | 0x13 | adc | Gv_Ev
+00 | 0x21 | and | Ev_Gv
+00 | 0x23 | and | Gv_Ev
+00 | 0x31 | xor | Ev_Gv
+00 | 0x33 | xor | Gv_Ev
+
+# Standard 1-byte
+00 | 0x90 | nop  | None
+00 | 0xC3 | ret  | None
+
+# Ranges (Expands to PUSH RAX...PUSH RDI)
+00 | 0x50:0x57 | push | Reg_In_Opcode
+00 | 0x58:0x5F | pop | Reg_In_Opcode
+
+# --- DATA TRANSFER (MOV) ---
+# 0x88: MOV r/m8, r8  (Store Byte)
+#00 | 0x88 | mov | Eb_Gb
+
+# 0x89: MOV r/m, reg  (Store Word/Dword/Qword)
+00 | 0x89 | mov | Ev_Gv
+
+# 0x8A: MOV r8, r/m8  (Load Byte)
+#00 | 0x8A | mov | Gb_Eb
+
+# 0x8B: MOV reg, r/m  (Load Word/Dword/Qword)
+00 | 0x8B | mov | Gv_Ev
+
+# OPCODE 0x80 (8-bit immediate)
+#00 | 0x80/0 | add | Eb_Ib
+#00 | 0x80/1 | or  | Eb_Ib
+#00 | 0x80/2 | adc | Eb_Ib
+#00 | 0x80/3 | sbb | Eb_Ib
+#00 | 0x80/4 | and | Eb_Ib
+#00 | 0x80/5 | sub | Eb_Ib
+#00 | 0x80/6 | xor | Eb_Ib
+#00 | 0x80/7 | cmp | Eb_Ib
+
+# 2-Byte Map (Standard)
+#00 | 0x0F84 | je | Jz
+
+# SSE/AVX (Prefix dependent sharing same opcode)
+#00 | 0x0F58 | addps | Vps_Wps
+#66 | 0x0F58 | addpd | Vpd_Wpd
+#F3 | 0x0F58 | addss | Vss_Wss
+#F2 | 0x0F58 | addsd | Vsd_Wsd
+
+# 3-Byte Opcodes (SSSE3 / SSE4)
+# 0F 38 00 = PSHUFB
+#66 | 0x0F3800 | pshufb | Vdq_Wdq
