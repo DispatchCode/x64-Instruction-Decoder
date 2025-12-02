@@ -1,7 +1,7 @@
 #include "function_length.h"
 
 
-vector* instrFlowLength(char *pMemory, const enum supported_architecture arch)
+vector* instrFlowLength(char *pMemory)
 {
     int bytes_len = 0;
     uint64_t addr = (uint64_t)pMemory;
@@ -13,14 +13,14 @@ vector* instrFlowLength(char *pMemory, const enum supported_architecture arch)
     while(true)
     {
         struct instruction instr;
-        x64id_decode(&instr, arch, tmp_addr, 0);
+        x64id_decode(&instr, tmp_addr, 0);
 /*
         for (int i = 0; i < instr.length; i++) {
             printf("%X ", instr.instr[i]);
         }
         printf("\n");
 */
-        if(instr.op == 0xc3 || instr.op == 0xCC) // RET or INT3
+        if(instr.op[0] == 0xc3 || instr.op[0] == 0xCC) // RET or INT3
         {
             vector_push_back(visited, addr);
             if(queue_empty(future_paths))
@@ -75,10 +75,10 @@ int compare(const void * n1, const void * n2)
     return *(uint64_t*)n1 - *(uint64_t*)n2;
 }
 
-pFunctionInfo getFunctionLength(char *buffer, enum supported_architecture arch)
+pFunctionInfo getFunctionLength(char *buffer)
 {
     pFunctionInfo f_info = calloc(1,sizeof(functionInfo));
-    vector *visited = instrFlowLength(buffer, arch);
+    vector *visited = instrFlowLength(buffer);
 
     qsort(visited->vect, visited->tos, sizeof(uint64_t), compare);
 

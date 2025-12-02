@@ -397,6 +397,8 @@ struct vex_info {
 };
 #endif
 
+#define MAX_INSTR_LEN_STR   256
+
 struct instruction {
     uint64_t disp;
     uint64_t imm;
@@ -411,7 +413,7 @@ struct instruction {
 #endif
 
     uint8_t prefixes[4];
-    uint8_t op;
+    uint8_t op[3];
 
     union
     {
@@ -459,19 +461,24 @@ struct instruction {
 
     int8_t vex_cnt;
     int8_t prefix_cnt;
+	int8_t op_cnt; // we count as opcode 0x0f, 0x66 / 0xf3 / 0xf2, op
+
+	char disasm[MAX_INSTR_LEN_STR];
+	int disasm_str_len;
 };
 
 
 //
 // Functions
 //
-int x64id_decode(struct instruction *instr, enum supported_architecture arch, char *data_src, int offset);
-static void x64id_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *data_src, const size_t *modrm_table, const size_t *imm_table, const size_t *jcc_table);
+void x64id_set_arch(int arch);
+int x64id_decode(struct instruction *instr, char *data_src, int offset);
+static void x64id_decode_modrm(struct instruction *instr, const char *data_src, const size_t *modrm_table, const size_t *imm_table, const size_t *jcc_table);
 static inline bool x64id_check_sib(uint8_t mod, uint8_t rm);
 static inline int x64id_displacement_size(uint8_t mod, uint8_t rm);
-static inline int x64id_imm_size(struct instruction *instr, size_t val, enum supported_architecture arch);
-static int x64id_decode_2b(struct instruction *instr, enum supported_architecture arch, const char *data_src);
-static inline int x64id_vex_size(struct instruction *instr, enum supported_architecture arch, const char *data);
-static inline void x64id_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, uint8_t vex_size);
+static inline int x64id_imm_size(struct instruction *instr, size_t val);
+static int x64id_decode_2b(struct instruction *instr, const char *data_src);
+static inline int x64id_vex_size(struct instruction *instr, const char *data);
+static inline void x64id_vex_decode(struct instruction *instr, const char *data, uint8_t vex_size);
 
 #endif //x64id_H

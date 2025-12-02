@@ -12,6 +12,6 @@ typedef struct {
     int length;
 } functionInfo,*pFunctionInfo;
 
-pFunctionInfo getFunctionLength(char *buffer, enum supported_architecture arch);
+pFunctionInfo getFunctionLength(char *buffer);
 
 #endif //x64ID_FUNCTION_LENGTH_H

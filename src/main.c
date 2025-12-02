@@ -12,6 +12,8 @@ void instruction_info(struct instruction instr)
         printf("%02X ", instr.instr[i]);
 #endif
 
+	printf("\nDisasm: %s\n", instr.disasm);
+
     printf("\nInstr. length: %d\n", instr.length);
     if(instr.jcc_type != 0)
         printf("\nInstr. is a jump with target address: 0x%X\n",instr.label);
@@ -53,7 +55,7 @@ void instruction_info(struct instruction instr)
 #endif
     }
 
-    printf("\n\tOP: 0x%X\n", instr.op);
+    printf("\n\tOP: 0x%X\n", instr.op[instr.op_cnt ? 1 : 0]);
 
     if(instr.set_field & MODRM)
         printf("\tmod_reg_rm: 0x%X\n", instr.modrm.value);
@@ -79,9 +81,10 @@ size_t get_file_size(FILE *hfile)
     return file_size;
 }
 
-void binary_file(char *file_name, int architecture) {
+void binary_file(char *file_name, int arch) {
     FILE *hfile = fopen(file_name, "rb");
-    int arch = architecture;
+
+	x64id_set_arch(arch);
 
     if (hfile == NULL) {
         printf("ERROR: cannot open file!\n");
@@ -103,16 +106,18 @@ void binary_file(char *file_name, int architecture) {
     fread(data_buffer, sizeof(char), file_size, hfile);
     fclose(hfile);
 
-    int offset = 0x400;
-    int parse_bytes = 0x11000;
+    int offset = 0;
+    int parse_bytes = 0x3;
     int byte_reads = 0;
 
-    while(byte_reads <= parse_bytes) {
+    while(byte_reads <= file_size) {
         struct instruction instr;
-        x64id_decode(&instr, arch, (char*)data_buffer, offset);
+        x64id_decode(&instr, (char*)data_buffer, offset);
 
-        for(int i=0; i<instr.length; i++)
-            printf("%02X ", instr.instr[i]);
+        //for(int i=0; i<instr.length; i++)
+        //    printf("%02X ", instr.instr[i]);
+
+		instruction_info(instr);
 
         offset += instr.length;
         byte_reads+=instr.length;
@@ -121,7 +126,7 @@ void binary_file(char *file_name, int architecture) {
 
 void in_memory(int arch) {
     printf("Reading function machine code at address 0x%X...\n",(uint32_t) example4);
-    pFunctionInfo func_info = getFunctionLength(example4, arch);
+    pFunctionInfo func_info = getFunctionLength((char*)example4);
     printf(" Done!\nFunction Length: %d-bytes, decoded %d instructions.\n", func_info->length, func_info->pVisited->tos);
     printf("\nAddresses of instructions that has been decoded:\n");
 
@@ -141,7 +146,7 @@ void in_memory(int arch) {
 
     while(offset <= func_info->length) {
         struct instruction instr;
-        x64id_decode(&instr, arch, (char*)example4, offset);
+        x64id_decode(&instr, (char*)example4, offset);
         printf("Instr. VA: 0x%X\n",(uint32_t)((uint32_t)example4+offset));
         instruction_info(instr);
 

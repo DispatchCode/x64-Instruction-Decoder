@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
             printf("%02X ", buf[i]);
         printf("\n");
 
-        offset = x64id_decode(&instr, arch, (char*)buf, 0);
+        offset = x64id_decode(&instr, (char*)buf, 0);
         instruction_info(instr);
 
         // instruction may have 0xCC bytes,

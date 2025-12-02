@@ -1,15 +1,20 @@
 #include <stdio.h>
 #include "x64id.h"
+#include "disasm.h"
+
+// 32 or 64 bti mode: this must be set before use the decode function!
+// By default, select x64
+int x64id_arch = X64;
 
 static size_t *imm_table[4] = {0, imm_byte_2b,imm_byte_3b_38,imm_byte_3b_3A };
 static size_t *modrm_table[4] = {0, modrm_2b,modreg_3b_38,modreg_3b_3A };
 
-static inline void x64id_vex_decode(struct instruction *instr, enum supported_architecture arch, const char *data, uint8_t vex_size) {
+static inline void x64id_vex_decode(struct instruction *instr, const char *data, uint8_t vex_size) {
     memcpy(instr->vex, (data+instr->length), vex_size);
     instr->vex_cnt += vex_size;
     instr->length  += vex_size;
 
-    instr->op = *(data + instr->length);
+    instr->op[0] = *(data + instr->length);
     instr->length++;
 
     instr->set_prefix |= VEX;
@@ -20,7 +25,7 @@ static inline void x64id_vex_decode(struct instruction *instr, enum supported_ar
         instr->_vex.val5 = instr->vex[1];
 #endif
 
-        x64id_decode_modrm(instr, arch, data, modrm_2b, imm_byte_2b, NULL);
+        x64id_decode_modrm(instr, data, modrm_2b, imm_byte_2b, NULL);
     }
     else if(instr->vex[0] == 0xC4) {
 
@@ -30,22 +35,24 @@ static inline void x64id_vex_decode(struct instruction *instr, enum supported_ar
 #endif
 
         int8_t index = instr->vex[1] & 0x3;
-        x64id_decode_modrm(instr, arch, data, modrm_table[index], imm_table[index], NULL);
+        x64id_decode_modrm(instr, data, modrm_table[index], imm_table[index], NULL);
     }
     // TODO  XOP, 0x8F
 
 }
 
-static inline int x64id_vex_size(struct instruction *instr, enum supported_architecture arch, const char *data) {
+static inline int x64id_vex_size(struct instruction *instr, const char *data) {
     uint8_t curr_byte = (uint8_t) *(data + instr->length);
     uint8_t next_byte = (uint8_t) *(data + instr->length + 1);
 
     // 3-byte VEX prefix
-    if ((arch == X86 && curr_byte == 0xC4 && (next_byte >> 6) == 3) || (arch == X64 && curr_byte == 0xC4))
+    if ((x64id_arch == X86 && curr_byte == 0xC4 && (next_byte >> 6) == 3) ||
+        (x64id_arch == X64 && curr_byte == 0xC4))
         return 3;
         // 2-byte VEX prefix
-    else if ((arch == X86 && curr_byte == 0xC5 && (next_byte & 0x80)) || (arch == X64 && curr_byte == 0xC5))
-        return 2;
+    else if ((x64id_arch == X86 && curr_byte == 0xC5 && (next_byte & 0x80)) ||
+             (x64id_arch == X64 && curr_byte == 0xC5))
+             return 2;
 
     return 0;
 }
@@ -62,12 +69,12 @@ static inline int x64id_displacement_size(uint8_t mod, uint8_t rm) {
     return 0;
 }
 
-static inline int x64id_imm_size(struct instruction *instr, size_t val, enum supported_architecture arch) {
+static inline int x64id_imm_size(struct instruction *instr, size_t val) {
     switch (val) {
         case b:
             return 1;
         case v:
-            if(arch == X64 && instr->set_prefix & OP64)
+            if(x64id_arch == X64 && instr->set_prefix & OP64)
                 return 8;
             if(instr->set_prefix & OS)
                 return 2;
@@ -79,7 +86,7 @@ static inline int x64id_imm_size(struct instruction *instr, size_t val, enum sup
             return 4;
         case p:
             if(instr->set_prefix & OS) {
-                if (arch == X86)
+                if (x64id_arch == X86)
                     return 4;
                 return 8;
             }
@@ -106,9 +113,11 @@ static inline int x64id_imm_size(struct instruction *instr, size_t val, enum sup
     }
 }
 
-static void x64id_decode_modrm(struct instruction *instr, enum supported_architecture arch, const char *start_data, const size_t *modrm_table, const size_t *imm_table, const size_t *jcc_table) {
-    size_t val;
-    if((val = modrm_table[instr->op])) {
+static void x64id_decode_modrm(struct instruction *instr, const char *start_data, const size_t *modrm_table, const size_t *imm_table, const size_t *jcc_table) {
+    int op_index = instr->op_cnt ? 1 : 0;
+
+	size_t val;
+    if((val = modrm_table[instr->op[op_index]])) {
         instr->set_field |= MODRM;
 
         if(val == X87_FPU)
@@ -142,7 +151,7 @@ static void x64id_decode_modrm(struct instruction *instr, enum supported_archite
         }
     }
 
-    instr->imm_len = x64id_imm_size(instr, imm_table[instr->op], arch);
+    instr->imm_len = x64id_imm_size(instr, imm_table[instr->op[op_index]]);
     if(instr->imm_len) {
         instr->set_field |= IMM;
         memcpy(&instr->imm, (start_data + instr->length), instr->imm_len);
@@ -150,7 +159,7 @@ static void x64id_decode_modrm(struct instruction *instr, enum supported_archite
     }
 
     uint16_t value = 0;
-    if(jcc_table != NULL && ((value = jcc_table[instr->op]))) {
+    if(jcc_table != NULL && ((value = jcc_table[instr->op[op_index]]))) {
         switch(value) {
             case j1:
                 instr->jcc_type = JMP_SHORT;
@@ -176,43 +185,43 @@ static void x64id_decode_modrm(struct instruction *instr, enum supported_archite
     }
 }
 
-static int x64id_decode_2b(struct instruction *instr, enum supported_architecture arch, const char *data_src)
+static int x64id_decode_2b(struct instruction *instr, const char *data_src)
 {
     instr->set_prefix |= ESCAPE;
     uint8_t curr = *(data_src + instr->length);
 
-    if(curr == 0x3A || curr == 0x38)
+    instr->op[instr->op_cnt++] = curr;
+    instr->length++;
+
+	if(curr == 0x3A || curr == 0x38)
     {
         instr->set_prefix |= OP3B;
 
         instr->prefixes[instr->prefix_cnt++] = curr;
         instr->length++;
-        instr->op = *(data_src + instr->length);
+        instr->op[instr->op_cnt++] = *(data_src + instr->length);
         instr->length++;
 
         if(curr == 0x3A)
-            x64id_decode_modrm(instr, arch, data_src, modreg_3b_3A, imm_byte_3b_3A, NULL);
+            x64id_decode_modrm(instr, data_src, modreg_3b_3A, imm_byte_3b_3A, NULL);
         else
-            x64id_decode_modrm(instr, arch, data_src, modreg_3b_38, imm_byte_3b_38, NULL);
+            x64id_decode_modrm(instr, data_src, modreg_3b_38, imm_byte_3b_38, NULL);
 
         return instr->length;
     }
 
-    instr->op = curr;
-    instr->length++;
-
-    x64id_decode_modrm(instr, arch, data_src, modrm_2b, imm_byte_2b, op2b_labels);
+    x64id_decode_modrm(instr, data_src, modrm_2b, imm_byte_2b, op2b_labels);
 
     return instr->length;
 }
 
-int x64id_decode(struct instruction *instr, enum supported_architecture arch, char *data, int offset) {
+int x64id_decode(struct instruction *instr, char *data, int offset) {
     memset(instr, 0, sizeof(struct instruction));
 
     char *start_data = (data + offset);
     uint8_t curr = *start_data;
 
-    while(x86_64_prefix[curr] & arch)
+    while(x86_64_prefix[curr] & x64id_arch)
     {
         switch(curr) {
             case 0x26:
@@ -229,7 +238,7 @@ int x64id_decode(struct instruction *instr, enum supported_architecture arch, ch
                 break;
             case 0x48:
             case 0x49:
-                if(arch == X64)
+                if(x64id_arch == X64)
                     instr->set_prefix |= OP64;
                 break;
             case 0x64:
@@ -254,14 +263,16 @@ int x64id_decode(struct instruction *instr, enum supported_architecture arch, ch
         // Rex prefix
         // TODO 64-bit mode: IF OP == 90h and REX.B == 1,
         //  then the instruction is XCHG r8, rAX
-        if(arch == X64 && (curr >= 0x40 && curr <= 0x4F))
+        if(x64id_arch == X64 && (curr >= 0x40 && curr <= 0x4F))
         {
             instr->rex.value = curr;
             instr->set_field |= REX;
         }
         else if(curr == 0x0F)
         {
-            x64id_decode_2b(instr, arch, start_data);
+            instr->length++;
+       	    instr->op[instr->op_cnt++] = curr;
+            x64id_decode_2b(instr, start_data);
 #ifdef _ENABLE_RAW_BYTES
             memcpy(instr->instr, start_data, instr->length);
 #endif
@@ -270,20 +281,26 @@ int x64id_decode(struct instruction *instr, enum supported_architecture arch, ch
 
         curr = (uint8_t) *(start_data + instr->length);
     }
-
-    size_t vex_size = x64id_vex_size(instr, arch, start_data);
+    
+    size_t vex_size = x64id_vex_size(instr, start_data);
     if(vex_size)
-        x64id_vex_decode(instr, arch, start_data, vex_size);
+        x64id_vex_decode(instr, start_data, vex_size);
     else
     {
         instr->length++;
-        instr->op = curr;
-        x64id_decode_modrm(instr, arch, start_data, modrm_1b, imm_byte_1b, op1b_labels);
+        instr->op[instr->op_cnt] = curr;
+        x64id_decode_modrm(instr, start_data, modrm_1b, imm_byte_1b, op1b_labels);
     }
 
 #ifdef _ENABLE_RAW_BYTES
     memcpy(instr->instr, start_data, instr->length);
 #endif
 
+	x64id_disasm(instr);
+
     return instr->length;
+}
+
+void x64id_set_arch(int arch) {
+	x64id_arch = arch;
 }
