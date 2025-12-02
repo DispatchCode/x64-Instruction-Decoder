@@ -16,6 +16,7 @@ Here some scenarios where x64ID can be used:
 ___
 
 - [x64ID ~ x64 Instruction Decoder](#x64id--machine-code-analyzer)
+  * [Mnemonic translation](#mnemonic-translation) 🌟*New❗*🌟
   * [Supported architectures and features](#supported-architectures-and-features)
     + [Features on development](#features-on-development)
   * [API](#api)
@@ -69,8 +70,51 @@ ___
 
 🎯 XOP support <br>
 🎯 AVX-512 (EVEX prefix) <br>
-🎯 Machine code to assembly mnemonics <br>
 🎯 Others (as ideas will come to mind...)
+
+### Partial support
+
+☑️ Machine code to assembly mnemonics <br>
+
+
+## Mnemonic translation
+Still in an early phase of development but present. From a sequence of bytes, like:
+
+```
+[...other bytes...] 43 89 44 B5 00 01 00 [...other bytes...]
+```
+
+It will produce:
+
+```
+RAW bytes (hex): 43 89 44 B5 00 
+Disasm: mov DWORD PTR [r13+r14*4 + 0x0],eax
+
+Instr. length: 5
+Print instruction fields:
+        Located Prefixes 1:
+                0x43 
+
+        REX 0x43:
+        OP: 0x89
+        mod_reg_rm: 0x44
+        SIB byte: 0xB5
+        disp (1): 0x0
+
+RAW bytes (hex): 01 00 
+Disasm: add DWORD PTR [rax],eax
+
+Instr. length: 2
+Print instruction fields:
+        Located Prefixes 0:
+                
+        OP: 0x1
+        mod_reg_rm: 0x0
+```
+
+Strong emphasis is on the "Disasm" line, not present before.
+
+This feature is under development and further tests are needed.
 
 ## API
 
