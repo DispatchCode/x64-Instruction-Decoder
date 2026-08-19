@@ -80,11 +80,14 @@ static inline int x64id_imm_size(struct instruction *instr, size_t val) {
                 return 2;
             return 4;
         case z:
-        case z1:
             if(instr->set_prefix & OS)
                 return 2;
             return 4;
-        case p:
+        case z1:
+            if(x64id_arch == X64)
+                return instr->set_prefix & AS ? 4 : 8;
+            return instr->set_prefix & AS ? 2 : 4;
+	case p:
             if(instr->set_prefix & OS) {
                 if (x64id_arch == X86)
                     return 4;
