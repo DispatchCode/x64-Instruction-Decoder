@@ -26,6 +26,7 @@
 #
 
 # ADD 0x00 - 0x05
+00 | 0x00 | add | Eb_Gb
 00 | 0x01 | add | Ev_Gv
 00 | 0x03 | add | Gv_Ev
 00 | 0x11 | adc | Ev_Gv
@@ -39,13 +40,17 @@
 00 | 0x90 | nop  | None
 00 | 0xC3 | ret  | None
 
+# Ranges INC / DEC (32-bit)
+00 | 0x40:0x47 | inc | Reg_In_Opcode
+00 | 0x48:0x4F | dec | Reg_In_Opcode
+
 # Ranges (Expands to PUSH RAX...PUSH RDI)
 00 | 0x50:0x57 | push | Reg_In_Opcode
 00 | 0x58:0x5F | pop | Reg_In_Opcode
 
 # --- DATA TRANSFER (MOV) ---
 # 0x88: MOV r/m8, r8  (Store Byte)
-#00 | 0x88 | mov | Eb_Gb
+00 | 0x88 | mov | Eb_Gb
 
 # 0x89: MOV r/m, reg  (Store Word/Dword/Qword)
 00 | 0x89 | mov | Ev_Gv

@@ -184,6 +184,14 @@ void handler_Ev_Gv(struct instruction *instr) {
 	generic_handler_EG(instr, size);
 }
 
+void handler_Eb_Gb(struct instruction *instr) {
+	generic_handler_EG(instr, 1);
+}
+
+void handler_Gb_Eb(struct instruction *instr) {
+	generic_handler_EG(instr, 1);
+}
+
 /*
  * Kind of special compared to others: register encoded into the opcode
  * Currently handle PUSH / POP

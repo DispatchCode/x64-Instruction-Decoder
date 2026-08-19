@@ -16,7 +16,11 @@ void instruction_info(struct instruction instr)
         printf("%02X ", instr.instr[i]);
     #endif
 
+    printf("\nDisasm: %s\n", instr.disasm);
+
     printf("\nInstr. length: %d\n", instr.length);
+    if(instr.jcc_type != 0)
+        printf("\nInstr. is a jump with target address: 0x%X\n",instr.label);
 
     printf("Print instruction fields:\n");
     printf("\tLocated Prefixes %d:\n\t\t", instr.prefix_cnt);
@@ -55,7 +59,7 @@ void instruction_info(struct instruction instr)
         #endif
     }
 
-    printf("\n\tOP: 0x%X\n", instr.op);
+    printf("\n\tOP: 0x%X\n", instr.op[instr.op_cnt ? 1 : 0]);
 
     if(instr.set_field & MODRM)
         printf("\tmod_reg_rm: 0x%X\n", instr.modrm.value);
@@ -103,6 +107,7 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
+    x64id_set_arch(arch);
     printf("\n\tSELECTED_ARCHITECTURE: %d\n", arch);
 
     struct instruction instr = {0};
