@@ -29,6 +29,8 @@
 00 | 0x00 | add | Eb_Gb
 00 | 0x01 | add | Ev_Gv
 00 | 0x03 | add | Gv_Ev
+00 | 0x04 | add | Al_Ib
+00 | 0x05 | add | Al_Iz
 00 | 0x11 | adc | Ev_Gv
 00 | 0x13 | adc | Gv_Ev
 00 | 0x21 | and | Ev_Gv

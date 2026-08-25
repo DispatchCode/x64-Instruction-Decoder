@@ -14,6 +14,16 @@ switch (instr->op[0]) {
         handler_Gv_Ev(instr);
         break;
     }
+    case 0x04: {
+        INSTR_CONCAT("add ", "%s");
+        handler_Al_Ib(instr);
+        break;
+    }
+    case 0x05: {
+        INSTR_CONCAT("add ", "%s");
+        handler_Al_Iz(instr);
+        break;
+    }
     case 0x11: {
         INSTR_CONCAT("adc ", "%s");
         handler_Ev_Gv(instr);

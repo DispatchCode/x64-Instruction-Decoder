@@ -37,8 +37,8 @@ static int get_operand_size(struct instruction *instr) {
     if (instr->rex.bits.rex_w)
         return 8;
 
-	if(instr->set_prefix & OS)
-		return 2;
+    if(instr->set_prefix & OS)
+        return 2;
 
     return 4;
 }
@@ -190,6 +190,20 @@ void handler_Eb_Gb(struct instruction *instr) {
 
 void handler_Gb_Eb(struct instruction *instr) {
 	generic_handler_EG(instr, 1);
+}
+
+void generic_handler_Imm(struct instruction *instr, uint8_t size, uint8_t reg_index) {
+	INSTR_CONCAT(get_reg_name(instr, size, reg_index), "%s");
+	INSTR_CONCAT(",", "%s");
+	INSTR_CONCAT(instr->imm, "0x%llx");
+}
+
+void handler_Al_Ib(struct instruction *instr) {
+	generic_handler_Imm(instr, 1, 0);
+}
+
+void handler_Al_Iz(struct instruction *instr) {
+	generic_handler_Imm(instr, get_operand_size(instr), 0);
 }
 
 /*
