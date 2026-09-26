@@ -11,36 +11,121 @@
 # To keep things simple and not reinvent the wheel,
 # we use the same Intel terminology.
 #
-# Ev_Gv | Gv_Ev
-# Eb_Gb | Gb_Eb
-# Eb_Ib 
-# Jb 
-# Jz
-# Reg_In_Opcode 
-# None
-# ..... 
+# Eb_Gb | Gb_Eb | Ev_Gv | Gv_Ev
+# Eb_Ib | Ev_Iz | Al_Ib | Al_Iz
+# Reg_In_Opcode | Reg8_In_Opcode_Ib | Reg_In_Opcode_Iz
+# Jb | Jz | None
 #
 # 2) Prefixes
 # Each line starts with a prefix: this can be none (0x00)
 # or one or more between 0x0f, 0x66, 0xf2, 0xf3.
 #
 
-# ADD 0x00 - 0x05
+# Integer arithmetic and logic: r/m, register, and accumulator-immediate forms.
+# These encodings share the operand layouts documented in Intel SDM Vol. 2,
+# Appendix A, Table A-2.
 00 | 0x00 | add | Eb_Gb
 00 | 0x01 | add | Ev_Gv
+00 | 0x02 | add | Gb_Eb
 00 | 0x03 | add | Gv_Ev
 00 | 0x04 | add | Al_Ib
 00 | 0x05 | add | Al_Iz
+
+00 | 0x08 | or | Eb_Gb
+00 | 0x09 | or | Ev_Gv
+00 | 0x0A | or | Gb_Eb
+00 | 0x0B | or | Gv_Ev
+00 | 0x0C | or | Al_Ib
+00 | 0x0D | or | Al_Iz
+
 00 | 0x11 | adc | Ev_Gv
+00 | 0x10 | adc | Eb_Gb
+00 | 0x12 | adc | Gb_Eb
 00 | 0x13 | adc | Gv_Ev
+00 | 0x14 | adc | Al_Ib
+00 | 0x15 | adc | Al_Iz
+
+00 | 0x18 | sbb | Eb_Gb
+00 | 0x19 | sbb | Ev_Gv
+00 | 0x1A | sbb | Gb_Eb
+00 | 0x1B | sbb | Gv_Ev
+00 | 0x1C | sbb | Al_Ib
+00 | 0x1D | sbb | Al_Iz
+
+00 | 0x20 | and | Eb_Gb
+00 | 0x21 | and | Ev_Gv
+00 | 0x22 | and | Gb_Eb
+00 | 0x23 | and | Gv_Ev
+00 | 0x24 | and | Al_Ib
+00 | 0x25 | and | Al_Iz
+
+00 | 0x28 | sub | Eb_Gb
+00 | 0x29 | sub | Ev_Gv
+00 | 0x2A | sub | Gb_Eb
+00 | 0x2B | sub | Gv_Ev
+00 | 0x2C | sub | Al_Ib
+00 | 0x2D | sub | Al_Iz
+
+00 | 0x30 | xor | Eb_Gb
+00 | 0x31 | xor | Ev_Gv
+00 | 0x32 | xor | Gb_Eb
+00 | 0x33 | xor | Gv_Ev
+00 | 0x34 | xor | Al_Ib
+00 | 0x35 | xor | Al_Iz
+
+00 | 0x38 | cmp | Eb_Gb
+00 | 0x39 | cmp | Ev_Gv
+00 | 0x3A | cmp | Gb_Eb
+00 | 0x3B | cmp | Gv_Ev
+00 | 0x3C | cmp | Al_Ib
+00 | 0x3D | cmp | Al_Iz
+
+# Immediate arithmetic/logical group encodings (ModRM.reg selects operation).
+00 | 0x80/0 | add | Eb_Ib
+00 | 0x80/1 | or | Eb_Ib
+00 | 0x80/2 | adc | Eb_Ib
+00 | 0x80/3 | sbb | Eb_Ib
+00 | 0x80/4 | and | Eb_Ib
+00 | 0x80/5 | sub | Eb_Ib
+00 | 0x80/6 | xor | Eb_Ib
+00 | 0x80/7 | cmp | Eb_Ib
+00 | 0x81/0 | add | Ev_Iz
+00 | 0x81/1 | or | Ev_Iz
+00 | 0x81/2 | adc | Ev_Iz
+00 | 0x81/3 | sbb | Ev_Iz
+00 | 0x81/4 | and | Ev_Iz
+00 | 0x81/5 | sub | Ev_Iz
+00 | 0x81/6 | xor | Ev_Iz
+00 | 0x81/7 | cmp | Ev_Iz
+00 | 0x83/0 | add | Ev_Iz
+00 | 0x83/1 | or | Ev_Iz
+00 | 0x83/2 | adc | Ev_Iz
+00 | 0x83/3 | sbb | Ev_Iz
+00 | 0x83/4 | and | Ev_Iz
+00 | 0x83/5 | sub | Ev_Iz
+00 | 0x83/6 | xor | Ev_Iz
+00 | 0x83/7 | cmp | Ev_Iz
 00 | 0x21 | and | Ev_Gv
 00 | 0x23 | and | Gv_Ev
 00 | 0x31 | xor | Ev_Gv
 00 | 0x33 | xor | Gv_Ev
 
 # Standard 1-byte
-00 | 0x90 | nop  | None
-00 | 0xC3 | ret  | None
+00 | 0x90 | nop | None
+00 | 0xC3 | ret | None
+00 | 0xC9 | leave | None
+00 | 0xCC | int3 | None
+00 | 0xF4 | hlt | None
+00 | 0xF5 | cmc | None
+00 | 0xF8 | clc | None
+00 | 0xF9 | stc | None
+00 | 0xFA | cli | None
+00 | 0xFB | sti | None
+00 | 0xFC | cld | None
+00 | 0xFD | std | None
+00 | 0x9E | sahf | None
+00 | 0x9F | lahf | None
+00 | 0x9B | wait | None
 
 # Ranges INC / DEC (32-bit)
 00 | 0x40:0x47 | inc | Reg_In_Opcode
@@ -50,6 +135,10 @@
 00 | 0x50:0x57 | push | Reg_In_Opcode
 00 | 0x58:0x5F | pop | Reg_In_Opcode
 
+# MOV immediate into the opcode-encoded register.
+00 | 0xB0:0xB7 | mov | Reg8_In_Opcode_Ib
+00 | 0xB8:0xBF | mov | Reg_In_Opcode_Iz
+
 # --- DATA TRANSFER (MOV) ---
 # 0x88: MOV r/m8, r8  (Store Byte)
 00 | 0x88 | mov | Eb_Gb
@@ -58,10 +147,22 @@
 00 | 0x89 | mov | Ev_Gv
 
 # 0x8A: MOV r8, r/m8  (Load Byte)
-#00 | 0x8A | mov | Gb_Eb
+00 | 0x8A | mov | Gb_Eb
 
 # 0x8B: MOV reg, r/m  (Load Word/Dword/Qword)
 00 | 0x8B | mov | Gv_Ev
+
+# MOV immediate to r/m (group 11, extension /0).
+00 | 0xC6/0 | mov | Eb_Ib
+00 | 0xC7/0 | mov | Ev_Iz
+
+# TEST and XCHG register/memory forms
+00 | 0x84 | test | Eb_Gb
+00 | 0x85 | test | Ev_Gv
+00 | 0x86 | xchg | Eb_Gb
+00 | 0x87 | xchg | Ev_Gv
+00 | 0xA8 | test | Al_Ib
+00 | 0xA9 | test | Al_Iz
 
 # OPCODE 0x80 (8-bit immediate)
 #00 | 0x80/0 | add | Eb_Ib
@@ -73,8 +174,76 @@
 #00 | 0x80/6 | xor | Eb_Ib
 #00 | 0x80/7 | cmp | Eb_Ib
 
-# 2-Byte Map (Standard)
-#00 | 0x0F84 | je | Jz
+# Relative branches. The decoder calculates the absolute target in instr->label.
+00 | 0x70 | jo | Jb
+00 | 0x71 | jno | Jb
+00 | 0x72 | jb | Jb
+00 | 0x73 | jae | Jb
+00 | 0x74 | je | Jb
+00 | 0x75 | jne | Jb
+00 | 0x76 | jbe | Jb
+00 | 0x77 | ja | Jb
+00 | 0x78 | js | Jb
+00 | 0x79 | jns | Jb
+00 | 0x7A | jp | Jb
+00 | 0x7B | jnp | Jb
+00 | 0x7C | jl | Jb
+00 | 0x7D | jge | Jb
+00 | 0x7E | jle | Jb
+00 | 0x7F | jg | Jb
+00 | 0xE9 | jmp | Jz
+00 | 0xEB | jmp | Jb
+
+# Two-byte map: near conditional branches, 0F 80-8F.
+00 | 0x0F80 | jo | Jz
+00 | 0x0F81 | jno | Jz
+00 | 0x0F82 | jb | Jz
+00 | 0x0F83 | jae | Jz
+00 | 0x0F84 | je | Jz
+00 | 0x0F85 | jne | Jz
+00 | 0x0F86 | jbe | Jz
+00 | 0x0F87 | ja | Jz
+00 | 0x0F88 | js | Jz
+00 | 0x0F89 | jns | Jz
+00 | 0x0F8A | jp | Jz
+00 | 0x0F8B | jnp | Jz
+00 | 0x0F8C | jl | Jz
+00 | 0x0F8D | jge | Jz
+00 | 0x0F8E | jle | Jz
+00 | 0x0F8F | jg | Jz
+
+# Common two-byte integer instructions with ModRM register/memory operands.
+00 | 0x0F40 | cmovo | Gv_Ev
+00 | 0x0F41 | cmovno | Gv_Ev
+00 | 0x0F42 | cmovb | Gv_Ev
+00 | 0x0F43 | cmovae | Gv_Ev
+00 | 0x0F44 | cmove | Gv_Ev
+00 | 0x0F45 | cmovne | Gv_Ev
+00 | 0x0F46 | cmovbe | Gv_Ev
+00 | 0x0F47 | cmova | Gv_Ev
+00 | 0x0F48 | cmovs | Gv_Ev
+00 | 0x0F49 | cmovns | Gv_Ev
+00 | 0x0F4A | cmovp | Gv_Ev
+00 | 0x0F4B | cmovnp | Gv_Ev
+00 | 0x0F4C | cmovl | Gv_Ev
+00 | 0x0F4D | cmovge | Gv_Ev
+00 | 0x0F4E | cmovle | Gv_Ev
+00 | 0x0F4F | cmovg | Gv_Ev
+00 | 0x0FAF | imul | Gv_Ev
+00 | 0x0FB0 | cmpxchg | Eb_Gb
+00 | 0x0FB1 | cmpxchg | Ev_Gv
+00 | 0x0FC0 | xadd | Eb_Gb
+00 | 0x0FC1 | xadd | Ev_Gv
+
+# Two-byte instructions without explicit operands.
+00 | 0x0F05 | syscall | None
+00 | 0x0F07 | sysret | None
+00 | 0x0F0B | ud2 | None
+00 | 0x0F31 | rdtsc | None
+00 | 0x0F34 | sysenter | None
+00 | 0x0F35 | sysexit | None
+00 | 0x0FA2 | cpuid | None
+00 | 0x0F77 | emms | None
 
 # SSE/AVX (Prefix dependent sharing same opcode)
 #00 | 0x0F58 | addps | Vps_Wps
