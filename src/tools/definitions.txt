@@ -105,11 +105,6 @@
 00 | 0x83/5 | sub | Ev_Iz
 00 | 0x83/6 | xor | Ev_Iz
 00 | 0x83/7 | cmp | Ev_Iz
-00 | 0x21 | and | Ev_Gv
-00 | 0x23 | and | Gv_Ev
-00 | 0x31 | xor | Ev_Gv
-00 | 0x33 | xor | Gv_Ev
-
 # Standard 1-byte
 00 | 0x90 | nop | None
 00 | 0xC3 | ret | None
