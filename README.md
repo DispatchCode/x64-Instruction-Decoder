@@ -17,6 +17,7 @@ ___
 
 - [x64ID ~ x64 Instruction Decoder](#x64id--machine-code-analyzer)
   * [Mnemonic translation](#mnemonic-translation) 🌟*New❗*🌟
+    + [Command-line disassembler](#command-line-disassembler)
   * [Supported architectures and features](#supported-architectures-and-features)
     + [Features on development](#features-on-development)
   * [API](#api)
@@ -115,6 +116,43 @@ Print instruction fields:
 Strong emphasis is on the "Disasm" line, not present before.
 
 This feature is under development and further tests are needed.
+
+### Command-line disassembler
+
+The `x64id_disassembler` executable currently reads a **raw byte stream** and decodes it sequentially from file offset `0`. ELF and PE parsing - including locating executable sections or segments and accounting for a program's load address - is planned for a future update.
+
+Until executable-format support is added, passing an ELF or PE file directly will cause its headers, metadata, and non-code sections to be interpreted as machine instructions. This output is not a disassembly of the program's code. To inspect instructions with the current version, supply a raw binary containing the instruction bytes you want to decode.
+
+Select the architecture with `--arch` (or `-a`). Use `--output` (or `-o`) to save the same listing shown in the terminal to a plain-text file; the export includes the machine-code column and branch arrows without terminal color codes:
+
+```sh
+./x64id_disassembler --arch x86_64 --output disassembly.txt code.bin
+```
+
+![Disassembler output](docs/images/disassembler-output1.png)
+
+Run `./x64id_disassembler --help` for the complete list of options.
+
+Colors can be disabled or changed editing the `disassembler.ini` file. Its output currently is:
+
+```
+user@linux:~/Documenti/x64-Instruction-Decoder> cat disassembler.ini 
+[colors]
+# auto uses colors only when output is a terminal; always and never override it.
+# Colors: black, red, green, yellow, blue, magenta, cyan, white,
+# bright_black, bright_red, bright_green, bright_yellow, bright_blue,
+# bright_magenta, bright_cyan, bright_white, or none.
+# register, memory_size, and brackets color operand syntax.
+enabled = auto
+mnemonic = cyan
+jump = yellow
+call = magenta
+return = green
+data = bright_black
+register = bright_cyan
+memory_size = bright_blue
+brackets = bright_yellow
+```
 
 ## API
 
