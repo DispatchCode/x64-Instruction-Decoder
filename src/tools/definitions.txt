@@ -207,6 +207,15 @@
 00 | 0x0F8E | jle | Jz
 00 | 0x0F8F | jg | Jz
 
+# System group 7: 0F 01 /r.
+00 | 0x0F01/0 | sgdt | M
+00 | 0x0F01/1 | sidt | M
+00 | 0x0F01/2 | lgdt | M
+00 | 0x0F01/3 | lidt | M
+00 | 0x0F01/4 | smsw | Ew
+00 | 0x0F01/6 | lmsw | Ew
+00 | 0x0F01/7 | invlpg | M
+
 # Common two-byte integer instructions with ModRM register/memory operands.
 00 | 0x0F40 | cmovo | Gv_Ev
 00 | 0x0F41 | cmovno | Gv_Ev
