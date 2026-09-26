@@ -9,6 +9,114 @@ int x64id_arch = X64;
 static size_t *imm_table[4] = {0, imm_byte_2b,imm_byte_3b_38,imm_byte_3b_3A };
 static size_t *modrm_table[4] = {0, modrm_2b,modreg_3b_38,modreg_3b_3A };
 
+static int x64id_address_size(const struct instruction *instr)
+{
+    if (x64id_arch == X64)
+        return (instr->set_prefix & AS) ? 4 : 8;
+    return (instr->set_prefix & AS) ? 2 : 4;
+}
+
+static int64_t x64id_signed_displacement(const struct instruction *instr)
+{
+    if (instr->disp_len == 1)
+        return (int8_t)instr->disp;
+    if (instr->disp_len == 4)
+        return (int32_t)instr->disp;
+    return 0;
+}
+
+static uint8_t x64id_vex_prefix_byte2(const struct instruction *instr)
+{
+    return instr->vex[1];
+}
+
+static uint8_t x64id_vex_ext_r(const struct instruction *instr)
+{
+    if (!(instr->set_prefix & VEX)) return 0;
+    return (uint8_t)((~x64id_vex_prefix_byte2(instr) >> 7) & 1);
+}
+
+static uint8_t x64id_vex_ext_x(const struct instruction *instr)
+{
+    if (!(instr->set_prefix & VEX) || instr->vex[0] != 0xC4) return 0;
+    return (uint8_t)((~instr->vex[1] >> 6) & 1);
+}
+
+static uint8_t x64id_vex_ext_b(const struct instruction *instr)
+{
+    if (!(instr->set_prefix & VEX) || instr->vex[0] != 0xC4) return 0;
+    return (uint8_t)((~instr->vex[1] >> 5) & 1);
+}
+
+/* Build a stable operand view once decoding is complete.  The disassembler
+ * then works with these operands instead of interpreting ModRM/SIB/REX. */
+static void x64id_decode_operands(struct instruction *instr)
+{
+    uint8_t op_index = instr->op_cnt > 1 ? 1 : 0;
+
+    if (instr->set_field & MODRM) {
+        struct decoded_operand *rm = &instr->operands[instr->operand_count++];
+        uint8_t mod = instr->modrm.bits.mod;
+        uint8_t rm_index = instr->modrm.bits.rm;
+        uint8_t rex_b = instr->rex.bits.rex_b | x64id_vex_ext_b(instr);
+
+        if (mod == 3) {
+            rm->kind = DECODED_OPERAND_REGISTER;
+            rm->reg = (uint8_t)(rm_index + (rex_b << 3));
+        } else {
+            rm->kind = DECODED_OPERAND_MEMORY;
+            rm->address_size = (uint8_t)x64id_address_size(instr);
+            rm->displacement = x64id_signed_displacement(instr);
+
+            if (instr->set_field & SIB) {
+                uint8_t sib_base = instr->sib.bits.base;
+                uint8_t sib_index = instr->sib.bits.index;
+                rm->scale = (uint8_t)(1u << instr->sib.bits.scaled);
+                if (!(mod == 0 && sib_base == 5)) {
+                    rm->has_base = true;
+                    rm->base = (uint8_t)(sib_base + (rex_b << 3));
+                }
+                if (sib_index != 4 || instr->rex.bits.rex_x || x64id_vex_ext_x(instr)) {
+                    rm->has_index = true;
+                    rm->index = (uint8_t)(sib_index + ((instr->rex.bits.rex_x | x64id_vex_ext_x(instr)) << 3));
+                }
+            } else if (mod == 0 && rm_index == 5) {
+                rm->rip_relative = x64id_arch == X64 && rm->address_size == 8;
+                if (!rm->rip_relative)
+                    rm->has_base = false;
+            } else {
+                rm->has_base = true;
+                rm->base = (uint8_t)(rm_index + (rex_b << 3));
+            }
+            /* A displacement-only address is an absolute unsigned offset. */
+            if (!rm->has_base && !rm->has_index && !rm->rip_relative && instr->disp_len == 4)
+                rm->displacement = (int64_t)(uint32_t)instr->disp;
+        }
+
+        struct decoded_operand *reg = &instr->operands[instr->operand_count++];
+        reg->kind = DECODED_OPERAND_REGISTER;
+        reg->reg = (uint8_t)(instr->modrm.bits.reg + ((instr->rex.bits.rex_r | x64id_vex_ext_r(instr)) << 3));
+    }
+
+    if (instr->set_field & IMM) {
+        struct decoded_operand *imm = &instr->operands[instr->operand_count++];
+        imm->kind = DECODED_OPERAND_IMMEDIATE;
+        imm->immediate = instr->imm;
+    }
+
+    /* INC/DEC in 32-bit mode and PUSH/POP use the low opcode bits as a
+     * register number. */
+    if (!(instr->set_field & MODRM)) {
+        uint8_t opcode = instr->op[op_index];
+        if ((opcode >= 0x40 && opcode <= 0x5f) ||
+            (opcode >= 0xb0 && opcode <= 0xbf)) {
+            struct decoded_operand *reg = &instr->operands[instr->operand_count++];
+            reg->kind = DECODED_OPERAND_REGISTER;
+            reg->reg = (uint8_t)((opcode & 7) + (instr->rex.bits.rex_b << 3));
+        }
+    }
+}
+
 static inline void x64id_vex_decode(struct instruction *instr, const char *data, uint8_t vex_size) {
     memcpy(instr->vex, (data+instr->length), vex_size);
     instr->vex_cnt += vex_size;
@@ -270,6 +378,8 @@ int x64id_decode(struct instruction *instr, char *data, int offset) {
         {
             instr->rex.value = curr;
             instr->set_field |= REX;
+            if (instr->rex.bits.rex_w)
+                instr->set_prefix |= OP64;
         }
         else if(curr == 0x0F)
         {
@@ -279,6 +389,8 @@ int x64id_decode(struct instruction *instr, char *data, int offset) {
 #ifdef _ENABLE_RAW_BYTES
             memcpy(instr->instr, start_data, instr->length);
 #endif
+            x64id_decode_operands(instr);
+            x64id_disasm(instr);
             return instr->length;
         }
 
@@ -299,6 +411,7 @@ int x64id_decode(struct instruction *instr, char *data, int offset) {
     memcpy(instr->instr, start_data, instr->length);
 #endif
 
+	x64id_decode_operands(instr);
 	x64id_disasm(instr);
 
     return instr->length;

@@ -399,6 +399,29 @@ struct vex_info {
 
 #define MAX_INSTR_LEN_STR   256
 
+enum decoded_operand_kind {
+    DECODED_OPERAND_NONE = 0,
+    DECODED_OPERAND_REGISTER,
+    DECODED_OPERAND_MEMORY,
+    DECODED_OPERAND_IMMEDIATE
+};
+
+/* Structural operands decoded from the instruction bytes.  Operand width is
+ * assigned by the disassembler handler because it depends on the opcode. */
+struct decoded_operand {
+    enum decoded_operand_kind kind;
+    uint8_t reg;
+    uint8_t address_size;
+    uint8_t scale;
+    uint8_t base;
+    uint8_t index;
+    bool has_base;
+    bool has_index;
+    bool rip_relative;
+    int64_t displacement;
+    uint64_t immediate;
+};
+
 struct instruction {
     uint64_t disp;
     uint64_t imm;
@@ -463,8 +486,10 @@ struct instruction {
     int8_t prefix_cnt;
 	int8_t op_cnt; // we count as opcode 0x0f, 0x66 / 0xf3 / 0xf2, op
 
-	char disasm[MAX_INSTR_LEN_STR];
-	int disasm_str_len;
+    char disasm[MAX_INSTR_LEN_STR];
+    int disasm_str_len;
+    struct decoded_operand operands[3];
+    uint8_t operand_count;
 };
 
 
