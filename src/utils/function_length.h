@@ -3,15 +3,15 @@
 
 #include <stdio.h>
 
-#include "../vector.h"
 #include "../queue.h"
+#include "../vector.h"
 #include "../x64id.h"
 
 typedef struct {
-    vector *pVisited;
-    int length;
-} functionInfo,*pFunctionInfo;
+	vector *pVisited;
+	int length;
+} functionInfo, *pFunctionInfo;
 
 pFunctionInfo getFunctionLength(char *buffer);
 
-#endif //x64ID_FUNCTION_LENGTH_H
+#endif // x64ID_FUNCTION_LENGTH_H
