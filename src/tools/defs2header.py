@@ -1,147 +1,229 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
+"""Generate the opcode dispatch included by disasm.c from definitions.txt."""
 
+from pathlib import Path
+import re
 import sys
 
-INPUT_FILE = "definitions.txt"
-OUTPUT_FILE = "generated_opcodes.h"
 
-def parse_opcode_string(op_str):
-    op_str = op_str.strip()
+TOOLS_DIR = Path(__file__).resolve().parent
+INPUT_FILE = TOOLS_DIR / "definitions.txt"
+OUTPUT_FILE = TOOLS_DIR / "generated_opcodes.h"
+IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+PREFIX_FLAGS = {"66": "OS", "F2": "REPNE", "F3": "REPE"}
+
+
+def parse_prefix(value, line_number):
+    value = value.strip().upper()
+    if value in ("", "00", "0X00"):
+        return ()
+
+    tokens = re.findall(r"(?:0X)?[0-9A-F]{2}", value)
+    if not tokens or re.sub(r"(?:0X)?[0-9A-F]{2}|[\s,+]+", "", value):
+        raise ValueError(f"line {line_number}: invalid prefix {value!r}")
+
+    prefixes = tuple(token.removeprefix("0X") for token in tokens)
+    unsupported = set(prefixes) - PREFIX_FLAGS.keys()
+    if unsupported:
+        bad = ", ".join(sorted(unsupported))
+        raise ValueError(f"line {line_number}: unsupported mandatory prefix(es): {bad}")
+    if len(set(prefixes)) != len(prefixes):
+        raise ValueError(f"line {line_number}: duplicate mandatory prefix")
+    return prefixes
+
+
+def parse_opcode(opcode_text, line_number):
     extension = None
-    
-    # Check for Group Extension (e.g., 0x80/2)
-    if '/' in op_str:
-        base, ext_str = op_str.split('/')
-        extension = int(ext_str) # 0-7
-        op_str = base # Continue processing the base opcode
-        
-    if ':' in op_str:
-        start_str, end_str = op_str.split(':')
-        start_val = int(start_str, 16)
-        end_val = int(end_str, 16)
-        ops = range(start_val, end_val + 1)
+    if "/" in opcode_text:
+        opcode_text, extension_text = opcode_text.split("/", 1)
+        try:
+            extension = int(extension_text)
+        except ValueError as error:
+            raise ValueError(f"line {line_number}: invalid ModRM extension") from error
+        if not 0 <= extension <= 7:
+            raise ValueError(f"line {line_number}: ModRM extension must be 0..7")
+
+    if ":" in opcode_text:
+        start_text, end_text = opcode_text.split(":", 1)
+        try:
+            start, end = int(start_text, 16), int(end_text, 16)
+        except ValueError as error:
+            raise ValueError(f"line {line_number}: invalid opcode range") from error
+        if end < start:
+            raise ValueError(f"line {line_number}: opcode range is reversed")
+        values = range(start, end + 1)
     else:
-        ops = [int(op_str, 16)]
-        
-    result = []
-    for i in ops:
-        if i > 0xFFFF: seq = [(i >> 16) & 0xFF, (i >> 8) & 0xFF, i & 0xFF]
-        elif i > 0xFF: seq = [(i >> 8) & 0xFF, i & 0xFF]
-        else:          seq = [i]
-        result.append((seq, extension))
-        
-    return result
+        try:
+            values = (int(opcode_text, 16),)
+        except ValueError as error:
+            raise ValueError(f"line {line_number}: invalid opcode {opcode_text!r}") from error
 
-def parse_definitions(filename):
     entries = []
-    try:
-        with open(filename, "r") as f:
-            lines = f.readlines()
-    except FileNotFoundError:
-        print("File not found.")
-        sys.exit(1)
-
-    for line in lines:
-        raw = line.split("#")[0].strip()
-        if not raw: continue
-        parts = [p.strip() for p in raw.split('|')]
-        if len(parts) != 4: continue
-            
-        prefix, op_str, mnemonic, handler = parts
-        
-        # Get list of (byte_seq, extension) tuples
-        opcode_data = parse_opcode_string(op_str)
-        
-        for bytes_seq, ext in opcode_data:
-            entries.append({
-                "bytes": bytes_seq,
-                "prefix": prefix,
-                "mnemonic": mnemonic,
-                "handler": handler,
-                "extension": ext # New field: None or 0-7
-            })
+    for value in values:
+        if not 0 <= value <= 0xFFFFFF:
+            raise ValueError(f"line {line_number}: opcode must fit in 1..3 bytes")
+        width = 1 if value <= 0xFF else 2 if value <= 0xFFFF else 3
+        encoded = tuple((value >> shift) & 0xFF for shift in range((width - 1) * 8, -1, -8))
+        entries.append((encoded, extension))
     return entries
+
+
+def parse_definitions(path):
+    entries = []
+    seen = set()
+    with path.open(encoding="utf-8") as definitions:
+        for line_number, line in enumerate(definitions, start=1):
+            raw = line.split("#", 1)[0].strip()
+            if not raw:
+                continue
+
+            fields = [field.strip() for field in raw.split("|")]
+            if len(fields) != 4:
+                raise ValueError(f"line {line_number}: expected prefix | opcode | mnemonic | handler")
+            prefix_text, opcode_text, mnemonic, handler = fields
+            prefixes = parse_prefix(prefix_text, line_number)
+            if not IDENTIFIER.fullmatch(mnemonic) or not IDENTIFIER.fullmatch(handler):
+                raise ValueError(f"line {line_number}: mnemonic and handler must be identifiers")
+
+            for opcode, extension in parse_opcode(opcode_text, line_number):
+                key = (opcode, extension, prefixes)
+                if key in seen:
+                    raise ValueError(f"line {line_number}: duplicate opcode/prefix definition")
+                seen.add(key)
+                entries.append({
+                    "opcode": opcode,
+                    "extension": extension,
+                    "prefixes": prefixes,
+                    "mnemonic": mnemonic,
+                    "handler": handler,
+                    "line": line_number,
+                })
+    return entries
+
 
 def build_tree(entries):
     root = {}
-    for e in entries:
-        curr = root
-        for i, b in enumerate(e['bytes']):
-            if b not in curr: curr[b] = {'__candidates__': []}
-            node = curr[b]
-            if i == len(e['bytes']) - 1:
-                node['__candidates__'].append(e)
+    for entry in entries:
+        node = root
+        for index, byte in enumerate(entry["opcode"]):
+            child = node.setdefault(byte, {"entries": [], "children": {}})
+            if index == len(entry["opcode"]) - 1:
+                child["entries"].append(entry)
             else:
-                if '__children__' not in node: node['__children__'] = {}
-                curr = node['__children__']
+                node = child["children"]
     return root
 
-def generate_switch(node, depth, indent_level):
+
+def prefix_condition(prefixes):
+    if not prefixes:
+        return None
+    return " && ".join(f"(instr->set_prefix & {PREFIX_FLAGS[prefix]})" for prefix in prefixes)
+
+
+def emit_instruction(entry, indent):
+    return [
+        f'{indent}append_mnemonic(instr, "{entry["mnemonic"]}");',
+        f'{indent}handler_{entry["handler"]}(instr);',
+    ]
+
+
+def emit_selection(entries, indent, fallback):
+    """Select a mandatory-prefix variant, falling back to the unprefixed form."""
+    prefixed = [entry for entry in entries if entry["prefixes"]]
+    unprefixed = [entry for entry in entries if not entry["prefixes"]]
+    lines = []
+
+    if not prefixed:
+        if unprefixed:
+            return emit_instruction(unprefixed[0], indent)
+        return [f"{indent}{fallback}"]
+
+    for index, entry in enumerate(prefixed):
+        condition = prefix_condition(entry["prefixes"])
+        keyword = "if" if index == 0 else "else if"
+        lines.append(f"{indent}{keyword} ({condition}) {{")
+        lines.extend(emit_instruction(entry, indent + "    "))
+        lines.append(f"{indent}}}")
+
+    if unprefixed:
+        lines.append(f"{indent}else {{")
+        lines.extend(emit_instruction(unprefixed[0], indent + "    "))
+        lines.append(f"{indent}}}")
+    else:
+        lines.append(f"{indent}else {{")
+        lines.append(f"{indent}    {fallback}")
+        lines.append(f"{indent}}}")
+
+    return lines
+
+
+def emit_node(node, depth, indent_level):
     indent = "    " * indent_level
-    out = f"{indent}switch (instr->op[{depth}]) {{\n"
-    
-    for byte_val in sorted([k for k in node.keys() if isinstance(k, int)]):
-        child = node[byte_val]
-        candidates = child.get('__candidates__', [])
-        has_children = '__children__' in child
-        
-        out += f"{indent}    case 0x{byte_val:02X}: {{\n"
-        
-        # 1. Recursive Children (e.g. 0x0F...)
-        if has_children:
-            out += generate_switch(child['__children__'], depth + 1, indent_level + 2)
-            out += f"{indent}        break;\n"
-            out += f"{indent}    }}\n" # End case
-            continue
+    lines = [f"{indent}switch (instr->op[{depth}]) {{"]
 
-        # 2. Check if this is a GROUP (uses /0, /1 extensions)
-        # We group candidates by their extension ID
-        groups = {} # Key: int (0-7), Value: list of candidates
-        simple_candidates = []
-        
-        for c in candidates:
-            if c['extension'] is not None:
-                if c['extension'] not in groups: groups[c['extension']] = []
-                groups[c['extension']].append(c)
-            else:
-                simple_candidates.append(c)
+    for byte in sorted(node):
+        child = node[byte]
+        case_indent = indent + "    "
+        lines.append(f"{case_indent}case 0x{byte:02X}: {{")
 
-        if groups:
-            # IT IS A GROUP! Generate switch on ModRM.Reg
-            out += f"{indent}        switch (instr->modrm.bits.reg) {{\n"
-            for ext_id, group_cands in groups.items():
-                out += f"{indent}            case {ext_id}:\n"
-                # Handle Prefixes inside the group case
-                for c in group_cands:
-                    if c['prefix'] == '00':
-                        out += f"{indent}                INSTR_CONCAT(\"{c['mnemonic']} \", \"%s\"); handler_{c['handler']}(instr);\n"
-                    else:
-                        out += f"{indent}                if (instr->prefixes[0] == 0x{c['prefix']}) {{ INSTR_CONCAT(\"{c['mnemonic']} \",\"%s\"); handler_{c['handler']}(instr); }}\n"
-                out += f"{indent}                break;\n"
-            
-            # Default for undefined extensions in this group
-            out += f"{indent}            default: INSTR_CONCAT(\"(UD Group)\", \"%s\"); break;\n"
-            out += f"{indent}        }}\n"
-            
-        elif simple_candidates:
-            # Standard instruction (No group extension)
-            c = simple_candidates[0] # taking first for brevity
-            # (Insert logic for prefix handling here if needed, simplified for clarity)
-            out += f"{indent}        INSTR_CONCAT(\"{c['mnemonic']} \", \"%s\");\n"
-            out += f"{indent}        handler_{c['handler']}(instr);\n"
-        
-        out += f"{indent}        break;\n"
-        out += f"{indent}    }}\n"
+        if child["children"]:
+            if child["entries"]:
+                raise ValueError(f"opcode 0x{byte:02X} is both complete and a prefix of another opcode")
+            lines.extend(emit_node(child["children"], depth + 1, indent_level + 2))
+        else:
+            entries = child["entries"]
+            grouped = {}
+            plain = []
+            for entry in entries:
+                if entry["extension"] is None:
+                    plain.append(entry)
+                else:
+                    grouped.setdefault(entry["extension"], []).append(entry)
 
-    out += f"{indent}    default:\n"
-    out += f"{indent}        INSTR_CONCAT(instr->op[{depth}], \"db 0x%02X \");\n"
-    out += f"{indent}        break;\n"
-    out += f"{indent}}}\n"
-    return out
+            if grouped:
+                lines.append(f"{case_indent}    switch (instr->modrm.bits.reg) {{")
+                for extension in sorted(grouped):
+                    lines.append(f"{case_indent}        case {extension}: {{")
+                    lines.extend(emit_selection(grouped[extension], case_indent + "            ", 'append_text(instr, "(UD Group)");'))
+                    lines.append(f"{case_indent}            break;")
+                    lines.append(f"{case_indent}        }}")
+                lines.append(f"{case_indent}        default:")
+                lines.append(f'{case_indent}            append_text(instr, "(UD Group)");')
+                lines.append(f"{case_indent}            break;")
+                lines.append(f"{case_indent}    }}")
+            elif plain:
+                lines.extend(emit_selection(plain, case_indent + "    ", f"append_unknown_opcode(instr, {depth});"))
+
+        lines.append(f"{case_indent}    break;")
+        lines.append(f"{case_indent}}}")
+
+    lines.append(f"{indent}    default:")
+    lines.append(f'{indent}        append_unknown_opcode(instr, {depth});')
+    lines.append(f"{indent}        break;")
+    lines.append(f"{indent}}}")
+    return lines
+
+
+def generate_header(entries):
+    lines = [
+        "/* Generated from definitions.txt by defs2header.py. Do not edit. */",
+        *emit_node(build_tree(entries), 0, 0),
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def main():
+    try:
+        entries = parse_definitions(INPUT_FILE)
+        OUTPUT_FILE.write_text(generate_header(entries), encoding="utf-8")
+    except (OSError, ValueError) as error:
+        print(f"defs2header: {error}", file=sys.stderr)
+        return 1
+
+    print(f"Generated {OUTPUT_FILE.name} from {INPUT_FILE.name} ({len(entries)} opcode entries).")
+    return 0
+
 
 if __name__ == "__main__":
-    data = parse_definitions(INPUT_FILE)
-    root = build_tree(data)
-    with open(OUTPUT_FILE, "w") as f:
-        f.write(generate_switch(root, 0, 0))
-    print("Done.")
+    raise SystemExit(main())
