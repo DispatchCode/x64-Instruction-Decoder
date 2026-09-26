@@ -8,6 +8,8 @@ set(COMMONS src/x64id.c src/disasm.c src/utils/function_length.c src/vector.c sr
 set(SOURCES src/main.c)
 
 add_executable(x64id ${COMMONS} ${SOURCES})
+add_executable(x64id_disassembler ${COMMONS}
+	src/main_disassembler.c src/disassembler.c src/disassembler_output.c)
 
 include(test/CMakeLists.txt)
 
@@ -59,4 +61,5 @@ add_custom_target(format
 )
 
 add_dependencies(x64id format)
+add_dependencies(x64id_disassembler format)
 add_dependencies(x64id_test format)
