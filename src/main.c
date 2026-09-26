@@ -110,7 +110,7 @@ void binary_file(char *file_name, int arch) {
     int parse_bytes = 0x3;
     int byte_reads = 0;
 
-    while(byte_reads <= file_size) {
+    while(byte_reads < file_size) {
         struct instruction instr;
         x64id_decode(&instr, (char*)data_buffer, offset);
 
