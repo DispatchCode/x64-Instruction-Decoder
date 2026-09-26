@@ -364,6 +364,12 @@ int x64id_decode(struct instruction *instr, char *data, int offset) {
             case 0x67:
                 instr->set_prefix |= AS;
                 break;
+            case 0xF2:
+                instr->set_prefix |= REPNE;
+                break;
+            case 0xF3:
+                instr->set_prefix |= REPE;
+                break;
         }
 
         instr->set_field |= PREFIX;
@@ -383,8 +389,7 @@ int x64id_decode(struct instruction *instr, char *data, int offset) {
         }
         else if(curr == 0x0F)
         {
-            instr->length++;
-       	    instr->op[instr->op_cnt++] = curr;
+            instr->op[instr->op_cnt++] = curr;
             x64id_decode_2b(instr, start_data);
 #ifdef _ENABLE_RAW_BYTES
             memcpy(instr->instr, start_data, instr->length);
