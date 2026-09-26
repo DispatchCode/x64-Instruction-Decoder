@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import sys
 
 INPUT_FILE = "definitions.txt"
@@ -106,7 +108,7 @@ def generate_switch(node, depth, indent_level):
 
         if groups:
             # IT IS A GROUP! Generate switch on ModRM.Reg
-            out += f"{indent}        switch (instr->modrm.reg) {{\n"
+            out += f"{indent}        switch (instr->modrm.bits.reg) {{\n"
             for ext_id, group_cands in groups.items():
                 out += f"{indent}            case {ext_id}:\n"
                 # Handle Prefixes inside the group case
@@ -118,7 +120,7 @@ def generate_switch(node, depth, indent_level):
                 out += f"{indent}                break;\n"
             
             # Default for undefined extensions in this group
-            out += f"{indent}            default: INSTR_CONCAT(\"(UD Group)\"); break;\n"
+            out += f"{indent}            default: INSTR_CONCAT(\"(UD Group)\", \"%s\"); break;\n"
             out += f"{indent}        }}\n"
             
         elif simple_candidates:
