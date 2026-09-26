@@ -44,6 +44,27 @@ static void appendf(struct instruction *instr, const char *format, ...)
     }
 }
 
+static void append_text(struct instruction *instr, const char *text)
+{
+    appendf(instr, "%s", text);
+}
+
+static void append_mnemonic(struct instruction *instr, const char *mnemonic)
+{
+    appendf(instr, "%s ", mnemonic);
+}
+
+static void append_data_byte(struct instruction *instr, uint8_t byte)
+{
+    appendf(instr, "db 0x%02X ", byte);
+}
+
+static void append_unknown_opcode(struct instruction *instr, uint8_t last_index)
+{
+    for (uint8_t index = 0; index <= last_index && index < 3; ++index)
+        append_data_byte(instr, instr->op[index]);
+}
+
 const char *get_reg_name(uint8_t size, bool has_rex, unsigned index)
 {
     enum register_class reg_class;
@@ -154,6 +175,18 @@ void handler_Gv_Ev(struct instruction *instr) { handle_modrm_pair(instr, get_ope
 void handler_Ev_Gv(struct instruction *instr) { handle_modrm_pair(instr, get_operand_size(instr), false); }
 void handler_Eb_Gb(struct instruction *instr) { handle_modrm_pair(instr, 1, false); }
 void handler_Gb_Eb(struct instruction *instr) { handle_modrm_pair(instr, 1, true); }
+
+void handler_Ew(struct instruction *instr)
+{
+    if (instr->operand_count > 0)
+        print_operand(instr, &instr->operands[0], 2, true);
+}
+
+void handler_M(struct instruction *instr)
+{
+    if (instr->operand_count > 0 && instr->operands[0].kind == DECODED_OPERAND_MEMORY)
+        print_operand(instr, &instr->operands[0], 0, false);
+}
 
 static void handle_rm_immediate(struct instruction *instr, uint8_t size)
 {

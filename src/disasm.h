@@ -10,6 +10,8 @@ void handler_Eb_Gb(struct instruction *instr);
 void handler_Gb_Eb(struct instruction *instr);
 void handler_Eb_Ib(struct instruction *instr);
 void handler_Ev_Iz(struct instruction *instr);
+void handler_Ew(struct instruction *instr);
+void handler_M(struct instruction *instr);
 void handler_Al_Ib(struct instruction *instr);
 void handler_Al_Iz(struct instruction *instr);
 void handler_Reg_In_Opcode(struct instruction *instr);
