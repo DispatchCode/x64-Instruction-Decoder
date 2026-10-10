@@ -469,21 +469,36 @@ An example can be found in `main.c`, function `in_memory()`.
 > Handling jmp table require heuristics (eg. as IDA do and other tools) and more info on the target.
 ## Tests
 
-After googling for a better solution, I came back with one of the first things I was thinking: assembly.
+Run `make help` from the project root for a short guide to build targets,
+executables, architectures, and sample binaries.
 
-Tests have been written using NASM and must be compiled using the "bin" flag:
+The automated suite exercises the `x64id_disassembler` CLI in both x86 and
+x86_64 modes. It generates temporary raw-byte corpora from the opcode entries
+in `src/tools/definitions.txt`, varies ModRM register and addressing forms, and
+checks the decoded bytes and mnemonics. A regression case also verifies that
+an unsupported instruction is emitted as data and decoding continues with the
+next instruction.
+
+From the project root, run:
 
 ```sh
-nasm -f bin <filename.asm>
+make test
 ```
 
-The tested instructions are the following:
+This configures the `build/` directory if needed, builds the disassembler, and
+runs the suite. Use `make clean` to remove compiled outputs and generated test
+corpora; checked-in test binaries remain in place. Set `BUILD_DIR` to use
+another build directory.
 
-* x86: `1-byte OP`, `2-byte OP`, `3-byte OP` and `2-byte OP with VEX prefix`
-* x64: `1-byte OP`, `2-byte OP`, `3-byte OP`; some of which have `VEX prefix`
-
-Tests have been written by hand using the Intel Developer Manual book [<sup>[2]</sup>](#user-content-res2).
-I can't guarantee a 100% coverage, however all the opcodes have been tested.
+The matrix covers the definitions currently in the project, not the entire x86
+instruction set. See [`test/README.md`](test/README.md) for its scope and limits.
+That guide also documents `make inspect-opcode-sweep`, which generates the raw
+opcode-sweep binaries, builds the disassembler, and writes its output to
+`/tmp/opcode-sweep-x86_64.txt`. It prints a deduplicated summary of unrecognized
+opcode forms and saves it to `/tmp/opcode-sweep-x86_64-missing.txt`. Use
+`ARCH=x86` to inspect the 32-bit sweep. For a compact binary containing a
+representative sample of every defined opcode, run `make opcode-sample` and
+disassemble `test/defined_opcodes_x86_64.bin`.
 
 ## Useful resources
 
