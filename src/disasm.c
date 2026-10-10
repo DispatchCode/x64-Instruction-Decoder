@@ -4,8 +4,6 @@
 
 #include "disasm.h"
 
-extern int x64id_arch;
-
 enum register_class {
 	REG_GPR8,
 	REG_GPR8_REX,
@@ -305,10 +303,10 @@ void handler_Reg_In_Opcode(struct instruction *instr)
 	if (instr->operand_count == 0)
 		return;
 
-	size = x64id_arch == X64 ? 8 : 4;
+	size = x64id_is_64bit ? 8 : 4;
 
 	if (instr->set_prefix & OS)
-		size = x64id_arch == X64 ? 4 : 2;
+		size = x64id_is_64bit ? 4 : 2;
 	print_operand(instr, &instr->operands[instr->operand_count - 1], size,
 				  false);
 }
@@ -338,6 +336,19 @@ void handler_Reg_In_Opcode_Iz(struct instruction *instr)
 static void handler_relative_target(struct instruction *instr)
 {
 	appendf(instr, "0x%llx", (unsigned long long)instr->label);
+}
+
+void handler_push(struct instruction *instr)
+{
+	if (x64id_is_64bit) {
+		instr->disasm[0] = '\0';
+		instr->disasm_str_len = 0;
+		for (int i = 0; i < instr->length && i < (int)sizeof(instr->instr); i++)
+			append_data_byte(instr, (uint8_t)instr->instr[i]);
+		return;
+	}
+
+	append_text(instr, "es");
 }
 
 void handler_Jb(struct instruction *instr) { handler_relative_target(instr); }

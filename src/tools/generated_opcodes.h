@@ -30,6 +30,11 @@ switch (instr->op[0]) {
         handler_Al_Iz(instr);
         break;
     }
+    case 0x06: {
+        append_mnemonic(instr, "push");
+        handler_push(instr);
+        break;
+    }
     case 0x08: {
         append_mnemonic(instr, "or");
         handler_Eb_Gb(instr);

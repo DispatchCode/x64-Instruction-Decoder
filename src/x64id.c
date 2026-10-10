@@ -4,14 +4,16 @@
 
 // 32 or 64 bti mode: this must be set before use the decode function!
 // By default, select x64
-int x64id_arch = X64;
+static int x64id_arch = X64;
+/* Set before decoding; treat as read-only until the next x64id_set_arch(). */
+bool x64id_is_64bit = true;
 
 static size_t *imm_table[4] = {0, imm_byte_2b, imm_byte_3b_38, imm_byte_3b_3A};
 static size_t *modrm_table[4] = {0, modrm_2b, modreg_3b_38, modreg_3b_3A};
 
 static int x64id_address_size(const struct instruction *instr)
 {
-	if (x64id_arch == X64)
+	if (x64id_is_64bit)
 		return (instr->set_prefix & AS) ? 4 : 8;
 	return (instr->set_prefix & AS) ? 2 : 4;
 }
@@ -87,7 +89,7 @@ static void x64id_decode_operands(struct instruction *instr)
 													   << 3));
 				}
 			} else if (mod == 0 && rm_index == 5) {
-				rm->rip_relative = x64id_arch == X64 && rm->address_size == 8;
+				rm->rip_relative = x64id_is_64bit && rm->address_size == 8;
 				if (!rm->rip_relative)
 					rm->has_base = false;
 			} else {
@@ -166,12 +168,10 @@ static inline int x64id_vex_size(struct instruction *instr, const char *data)
 	uint8_t next_byte = (uint8_t)*(data + instr->length + 1);
 
 	// 3-byte VEX prefix
-	if ((x64id_arch == X86 && curr_byte == 0xC4 && (next_byte >> 6) == 3) ||
-		(x64id_arch == X64 && curr_byte == 0xC4))
+	if (curr_byte == 0xC4 && (x64id_is_64bit || (next_byte >> 6) == 3))
 		return 3;
 	// 2-byte VEX prefix
-	else if ((x64id_arch == X86 && curr_byte == 0xC5 && (next_byte & 0x80)) ||
-			 (x64id_arch == X64 && curr_byte == 0xC5))
+	else if (curr_byte == 0xC5 && (x64id_is_64bit || (next_byte & 0x80)))
 		return 2;
 
 	return 0;
@@ -197,7 +197,7 @@ static inline int x64id_imm_size(struct instruction *instr, size_t val)
 	case b:
 		return 1;
 	case v:
-		if (x64id_arch == X64 && instr->set_prefix & OP64)
+		if (x64id_is_64bit && instr->set_prefix & OP64)
 			return 8;
 		if (instr->set_prefix & OS)
 			return 2;
@@ -207,12 +207,12 @@ static inline int x64id_imm_size(struct instruction *instr, size_t val)
 			return 2;
 		return 4;
 	case z1:
-		if (x64id_arch == X64)
+		if (x64id_is_64bit)
 			return instr->set_prefix & AS ? 4 : 8;
 		return instr->set_prefix & AS ? 2 : 4;
 	case p:
 		if (instr->set_prefix & OS) {
-			if (x64id_arch == X86)
+			if (!x64id_is_64bit)
 				return 4;
 			return 8;
 		}
@@ -370,7 +370,7 @@ int x64id_decode(struct instruction *instr, char *data, int offset)
 			break;
 		case 0x48:
 		case 0x49:
-			if (x64id_arch == X64)
+			if (x64id_is_64bit)
 				instr->set_prefix |= OP64;
 			break;
 		case 0x64:
@@ -401,7 +401,7 @@ int x64id_decode(struct instruction *instr, char *data, int offset)
 		// Rex prefix
 		// TODO 64-bit mode: IF OP == 90h and REX.B == 1,
 		//  then the instruction is XCHG r8, rAX
-		if (x64id_arch == X64 && (curr >= 0x40 && curr <= 0x4F)) {
+		if (x64id_is_64bit && (curr >= 0x40 && curr <= 0x4F)) {
 			instr->rex.value = curr;
 			instr->set_field |= REX;
 			if (instr->rex.bits.rex_w)
@@ -440,4 +440,8 @@ int x64id_decode(struct instruction *instr, char *data, int offset)
 	return instr->length;
 }
 
-void x64id_set_arch(int arch) { x64id_arch = arch; }
+void x64id_set_arch(int arch)
+{
+	x64id_arch = arch;
+	x64id_is_64bit = arch == X64;
+}

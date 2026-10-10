@@ -17,6 +17,7 @@ void handler_Al_Iz(struct instruction *instr);
 void handler_Reg_In_Opcode(struct instruction *instr);
 void handler_Reg8_In_Opcode_Ib(struct instruction *instr);
 void handler_Reg_In_Opcode_Iz(struct instruction *instr);
+void handler_push(struct instruction *instr);
 void handler_Jb(struct instruction *instr);
 void handler_Jz(struct instruction *instr);
 void handler_None(struct instruction *instr);

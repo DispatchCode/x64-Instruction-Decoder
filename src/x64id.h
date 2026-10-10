@@ -509,6 +509,8 @@ struct instruction {
 //
 // Functions
 //
+/* Configuration snapshot: set with x64id_set_arch(), read during decoding. */
+extern bool x64id_is_64bit;
 void x64id_set_arch(int arch);
 int x64id_decode(struct instruction *instr, char *data_src, int offset);
 static void x64id_decode_modrm(struct instruction *instr, const char *data_src,

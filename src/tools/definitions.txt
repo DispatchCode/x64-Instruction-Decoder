@@ -14,7 +14,8 @@
 # Eb_Gb | Gb_Eb | Ev_Gv | Gv_Ev
 # Eb_Ib | Ev_Iz | Al_Ib | Al_Iz
 # Reg_In_Opcode | Reg8_In_Opcode_Ib | Reg_In_Opcode_Iz
-# Jb | Jz | None
+# Jb | Jz | None | push
+# The push handler renders the implicit ES operand and is valid in x86 only.
 #
 # 2) Prefixes
 # Each line starts with a prefix: this can be none (0x00)
@@ -30,6 +31,7 @@
 00 | 0x03 | add | Gv_Ev
 00 | 0x04 | add | Al_Ib
 00 | 0x05 | add | Al_Iz
+00 | 0x06 | push | push
 
 00 | 0x08 | or | Eb_Gb
 00 | 0x09 | or | Ev_Gv
