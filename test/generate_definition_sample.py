@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
+
 """Generate a compact sample binary from the current opcode definitions."""
 
 import argparse

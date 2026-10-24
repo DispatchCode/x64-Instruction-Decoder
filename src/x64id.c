@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 #include "x64id.h"
 #include "disasm.h"
 #include <stdio.h>

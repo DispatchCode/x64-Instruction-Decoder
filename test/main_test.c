@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 #include "../src/x64id.h"
 #include <stdio.h>
 #include <stdlib.h>

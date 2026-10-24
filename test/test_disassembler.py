@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
+
 """End-to-end opcode/encoding coverage for the raw-binary disassembler."""
 
 from dataclasses import dataclass

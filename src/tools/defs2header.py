@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
+
 """Generate the opcode dispatch included by disasm.c from definitions.txt."""
 
 from pathlib import Path
@@ -206,6 +208,7 @@ def emit_node(node, depth, indent_level):
 
 def generate_header(entries):
     lines = [
+        "/* SPDX-License-Identifier: GPL-2.0-only */",
         "/* Generated from definitions.txt by defs2header.py. Do not edit. */",
         *emit_node(build_tree(entries), 0, 0),
         "",

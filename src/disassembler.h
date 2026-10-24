@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
 #ifndef X64ID_DISASSEMBLER_H
 #define X64ID_DISASSEMBLER_H
 

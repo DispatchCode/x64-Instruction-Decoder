@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
 #ifndef x64ID_FUNCTION_LENGTH_H
 #define x64ID_FUNCTION_LENGTH_H
 

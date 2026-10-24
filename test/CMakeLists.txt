@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 if(NOT BUILD_TESTING)
 	return()
 endif()

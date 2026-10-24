@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 #include "function_length.h"
 
 vector *instrFlowLength(char *pMemory)

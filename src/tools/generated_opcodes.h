@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
 /* Generated from definitions.txt by defs2header.py. Do not edit. */
 switch (instr->op[0]) {
     case 0x00: {

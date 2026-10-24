@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
 #ifndef x64ID_QUEUE_H
 #define x64ID_QUEUE_H
 

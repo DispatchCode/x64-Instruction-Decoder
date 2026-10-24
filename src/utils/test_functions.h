@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
 #ifndef _TEST_FUNCTIONS_H
 #define x64ID_TEST_FUNCTIONS_H
 

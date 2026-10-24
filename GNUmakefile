@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
 .DEFAULT_GOAL := all
 
 BUILD_DIR ?= build
