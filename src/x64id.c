@@ -107,6 +107,13 @@ static void x64id_decode_operands(struct instruction *instr)
 		reg->reg =
 			(uint8_t)(instr->modrm.bits.reg +
 					  ((instr->rex.bits.rex_r | x64id_vex_ext_r(instr)) << 3));
+
+		if (!instr->op_cnt && (instr->op[0] == 0x8C || instr->op[0] == 0x8E))
+			reg->kind = DECODED_OPERAND_SEGMENT_REGISTER;
+		else if (instr->op_cnt > 1 && instr->op[0] == 0x0F &&
+				 (instr->op[1] >= 0x20 && instr->op[1] <= 0x23))
+			reg->kind = (instr->op[1] & 1) ? DECODED_OPERAND_DEBUG_REGISTER
+										   : DECODED_OPERAND_CONTROL_REGISTER;
 	}
 
 	if (instr->set_field & IMM) {
@@ -195,6 +202,10 @@ static inline int x64id_imm_size(struct instruction *instr, size_t val)
 {
 	switch (val) {
 	case b:
+		if (x64id_is_64bit &&
+			(!instr->op_cnt && (instr->op[0] == 0x82 || instr->op[0] == 0xD4 ||
+								instr->op[0] == 0xD5)))
+			return 0;
 		return 1;
 	case v:
 		if (x64id_is_64bit && instr->set_prefix & OP64)
@@ -203,6 +214,11 @@ static inline int x64id_imm_size(struct instruction *instr, size_t val)
 			return 2;
 		return 4;
 	case z:
+		if (x64id_is_64bit && ((!instr->op_cnt && (instr->op[0] == 0xE8 ||
+												   instr->op[0] == 0xE9)) ||
+							   (instr->op_cnt > 1 && instr->op[0] == 0x0F &&
+								instr->op[1] >= 0x80 && instr->op[1] <= 0x8F)))
+			return 4;
 		if (instr->set_prefix & OS)
 			return 2;
 		return 4;
@@ -211,10 +227,10 @@ static inline int x64id_imm_size(struct instruction *instr, size_t val)
 			return instr->set_prefix & AS ? 4 : 8;
 		return instr->set_prefix & AS ? 2 : 4;
 	case p:
+		if (x64id_is_64bit)
+			return 0;
 		if (instr->set_prefix & OS) {
-			if (!x64id_is_64bit)
-				return 4;
-			return 8;
+			return 4;
 		}
 		return 6;
 	case w:
@@ -222,11 +238,11 @@ static inline int x64id_imm_size(struct instruction *instr, size_t val)
 	case wb:
 		return 3; // TODO  ENTER iw, ib
 	case gr3b:
-		if (!instr->modrm.bits.reg)
+		if (instr->modrm.bits.reg <= 1)
 			return 1;
 		return 0;
 	case gr3z:
-		if (!instr->modrm.bits.reg) {
+		if (instr->modrm.bits.reg <= 1) {
 			if (instr->set_prefix & OS)
 				return 2;
 			return 4;
@@ -305,14 +321,15 @@ static void x64id_decode_modrm(struct instruction *instr,
 			break; // avoid compiler warnings
 		}
 
-		// 1-byte
-		if (value & 0x10)
-			instr->label =
-				(uint64_t)start_data + ((int8_t)instr->imm) + instr->length;
-		// 4-byte
+		int64_t relative_offset;
+		if (instr->imm_len == 1)
+			relative_offset = (int8_t)instr->imm;
+		else if (instr->imm_len == 2)
+			relative_offset = (int16_t)instr->imm;
 		else
-			instr->label =
-				(uint64_t)start_data + ((int64_t)instr->imm) + instr->length;
+			relative_offset = (int32_t)instr->imm;
+
+		instr->label = (uint64_t)start_data + relative_offset + instr->length;
 	}
 }
 

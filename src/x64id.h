@@ -133,7 +133,7 @@ static size_t op1b_labels[256] = {
 	/* B0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	/* C0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	/* D0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	/* E0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, j2, 0, j1, 0, 0, 0, 0,
+	/* E0 */ jc1, jc1, jc1, jc1, 0, 0, 0, 0, j2, j2, 0, j1, 0, 0, 0, 0,
 	/* F0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
 // clang-format on
@@ -162,7 +162,7 @@ static size_t op1b_labels[256] = {
 static size_t modrm_2b[256] = {
 	//       00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
 	/* 00 */ P1, P1, P1, P1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	/* 10 */ P7, P7, P7, P2, P2, P2, P6, P2, P1, 0, 0, 0, 0, 0, 0, P1,
+	/* 10 */ P7, P7, P7, P2, P2, P2, P6, P2, P1, 0, 0, 0, 0, 0, OF3, P1,
 	/* 20 */ P1, P1, P1, P1, 0, 0, 0, 0, P2, P2, P7, P2, P7, P7, P2, P2,
 	/* 30 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	/* 40 */ P1, P1, P1, P1, P1, P1, P1, P1, P1, P1, P1, P1, P1, P1, P1, P1,
@@ -423,7 +423,10 @@ enum decoded_operand_kind {
 	DECODED_OPERAND_NONE = 0,
 	DECODED_OPERAND_REGISTER,
 	DECODED_OPERAND_MEMORY,
-	DECODED_OPERAND_IMMEDIATE
+	DECODED_OPERAND_IMMEDIATE,
+	DECODED_OPERAND_SEGMENT_REGISTER,
+	DECODED_OPERAND_CONTROL_REGISTER,
+	DECODED_OPERAND_DEBUG_REGISTER
 };
 
 /* Structural operands decoded from the instruction bytes.  Operand width is
