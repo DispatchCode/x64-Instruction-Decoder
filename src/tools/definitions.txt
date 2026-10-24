@@ -15,7 +15,7 @@
 # Eb_Ib | Ev_Iz | Al_Ib | Al_Iz
 # Reg_In_Opcode | Reg8_In_Opcode_Ib | Reg_In_Opcode_Iz
 # Jb | Jz | None | push
-# The push handler renders the implicit ES operand and is valid in x86 only.
+# The push handler renders PUSH ES (opcode 06), which is valid in x86 only.
 #
 # 2) Prefixes
 # Each line starts with a prefix: this can be none (0x00)
@@ -32,6 +32,12 @@
 00 | 0x04 | add | Al_Ib
 00 | 0x05 | add | Al_Iz
 00 | 0x06 | push | push
+00 | 0x07 | pop | segment_stack
+00 | 0x0E | push | segment_stack
+00 | 0x16 | push | segment_stack
+00 | 0x17 | pop | segment_stack
+00 | 0x1E | push | segment_stack
+00 | 0x1F | pop | segment_stack
 
 00 | 0x08 | or | Eb_Gb
 00 | 0x09 | or | Ev_Gv
@@ -81,6 +87,19 @@
 00 | 0x3B | cmp | Gv_Ev
 00 | 0x3C | cmp | Al_Ib
 00 | 0x3D | cmp | Al_Iz
+00 | 0x27 | daa | x86_only
+00 | 0x2F | das | x86_only
+00 | 0x37 | aaa | x86_only
+00 | 0x3F | aas | x86_only
+00 | 0xD4 | aam | aam_aad
+00 | 0xD5 | aad | aam_aad
+00 | 0xF1 | int1 | None
+
+# Immediate stack and three-operand multiply forms.
+00 | 0x68 | push | push_imm
+00 | 0x6A | push | push_imm
+00 | 0x69 | imul | Gv_Ev_Iz
+00 | 0x6B | imul | Gv_Ev_Ib
 
 # Immediate arithmetic/logical group encodings (ModRM.reg selects operation).
 00 | 0x80/0 | add | Eb_Ib
@@ -91,6 +110,14 @@
 00 | 0x80/5 | sub | Eb_Ib
 00 | 0x80/6 | xor | Eb_Ib
 00 | 0x80/7 | cmp | Eb_Ib
+00 | 0x82/0 | add | op82
+00 | 0x82/1 | or | op82
+00 | 0x82/2 | adc | op82
+00 | 0x82/3 | sbb | op82
+00 | 0x82/4 | and | op82
+00 | 0x82/5 | sub | op82
+00 | 0x82/6 | xor | op82
+00 | 0x82/7 | cmp | op82
 00 | 0x81/0 | add | Ev_Iz
 00 | 0x81/1 | or | Ev_Iz
 00 | 0x81/2 | adc | Ev_Iz
@@ -108,7 +135,22 @@
 00 | 0x83/6 | xor | Ev_Iz
 00 | 0x83/7 | cmp | Ev_Iz
 # Standard 1-byte
-00 | 0x90 | nop | None
+00 | 0x90 | nop | nop
+00 | 0x98 | convert | integer_alias
+00 | 0x99 | convert | integer_alias
+00 | 0x9A | call | far_pointer
+00 | 0xEA | jmp | far_pointer
+00 | 0x9C | pushf | None
+00 | 0x9D | popf | None
+00 | 0xC2 | ret | ret_imm
+00 | 0xCD | int | int_imm
+00 | 0xCE | into | x86_only
+00 | 0x60 | pusha | x86_only
+00 | 0x61 | popa | x86_only
+00 | 0xC8 | enter | enter
+00 | 0xCA | retf | ret_imm
+00 | 0xCB | retf | None
+00 | 0xCF | iret | None
 00 | 0xC3 | ret | None
 00 | 0xC9 | leave | None
 00 | 0xCC | int3 | None
@@ -127,6 +169,7 @@
 # Ranges INC / DEC (32-bit)
 00 | 0x40:0x47 | inc | Reg_In_Opcode
 00 | 0x48:0x4F | dec | Reg_In_Opcode
+00 | 0x91:0x97 | xchg | xchg_accumulator
 
 # Ranges (Expands to PUSH RAX...PUSH RDI)
 00 | 0x50:0x57 | push | Reg_In_Opcode
@@ -148,6 +191,13 @@
 
 # 0x8B: MOV reg, r/m  (Load Word/Dword/Qword)
 00 | 0x8B | mov | Gv_Ev
+00 | 0x8C | mov | segment_move
+00 | 0x8D | lea | Lea
+00 | 0x8E | mov | segment_move
+00 | 0x63 | arpl | arpl_movsxd
+00 | 0x8F/0 | pop | pop_Ev
+00 | 0xC4 | les | far_load
+00 | 0xC5 | lds | far_load
 
 # MOV immediate to r/m (group 11, extension /0).
 00 | 0xC6/0 | mov | Eb_Ib
@@ -171,6 +221,23 @@
 #00 | 0x80/6 | xor | Eb_Ib
 #00 | 0x80/7 | cmp | Eb_Ib
 
+# Accumulator absolute-memory forms and implicit string instructions.
+00 | 0xA0:0xA3 | mov | moffs
+00 | 0xA4:0xA7 | string | string
+00 | 0xAA:0xAF | string | string
+00 | 0x6C:0x6F | string | string
+00 | 0xD7 | xlat | None
+
+# Port I/O through an immediate port number or DX.
+00 | 0xE4:0xE7 | io | io
+00 | 0xEC:0xEF | io | io
+
+# Loop-family rel8 branches.
+00 | 0xE0 | loopne | Jb
+00 | 0xE1 | loope | Jb
+00 | 0xE2 | loop | Jb
+00 | 0xE3 | jrcxz | jrcxz
+
 # Relative branches. The decoder calculates the absolute target in instr->label.
 00 | 0x70 | jo | Jb
 00 | 0x71 | jno | Jb
@@ -190,6 +257,7 @@
 00 | 0x7F | jg | Jb
 00 | 0xE9 | jmp | Jz
 00 | 0xEB | jmp | Jb
+00 | 0xE8 | call | Jz
 
 # Two-byte map: near conditional branches, 0F 80-8F.
 00 | 0x0F80 | jo | Jz
@@ -248,8 +316,136 @@
 00 | 0x0F31 | rdtsc | None
 00 | 0x0F34 | sysenter | None
 00 | 0x0F35 | sysexit | None
+00 | 0x0F30 | wrmsr | None
+00 | 0x0F32 | rdmsr | None
+00 | 0x0F33 | rdpmc | None
 00 | 0x0FA2 | cpuid | None
 00 | 0x0F77 | emms | None
+00 | 0x0F00/0 | sldt | Ew
+00 | 0x0F00/1 | str | Ew
+00 | 0x0F00/2 | lldt | Ew
+00 | 0x0F00/3 | ltr | Ew
+00 | 0x0F00/4 | verr | Ew
+00 | 0x0F00/5 | verw | Ew
+00 | 0x0F18/0 | prefetchnta | M
+00 | 0x0F18/1 | prefetcht0 | M
+00 | 0x0F18/2 | prefetcht1 | M
+00 | 0x0F18/3 | prefetcht2 | M
+F3 | 0x0F1E | endbr | endbr
+00 | 0x0FA0 | push | segment_stack
+00 | 0x0FA1 | pop | segment_stack
+00 | 0x0FA8 | push | segment_stack
+00 | 0x0FA9 | pop | segment_stack
+00 | 0x0F1F/0 | nop | None
+00 | 0x0FA4 | shld | Ev_Gv_Ib
+00 | 0x0FA5 | shld | Ev_Gv_CL
+00 | 0x0FAC | shrd | Ev_Gv_Ib
+00 | 0x0FAD | shrd | Ev_Gv_CL
+00 | 0x0FA3 | bt | Ev_Gv
+00 | 0x0FAB | bts | Ev_Gv
+00 | 0x0FB3 | btr | Ev_Gv
+00 | 0x0FBB | btc | Ev_Gv
+00 | 0x0FBA/4 | bt | Ev_Iz
+00 | 0x0FBA/5 | bts | Ev_Iz
+00 | 0x0FBA/6 | btr | Ev_Iz
+00 | 0x0FBA/7 | btc | Ev_Iz
+00 | 0x0FB6 | movzx | Gv_Eb
+00 | 0x0FB7 | movzx | Gv_Ew
+00 | 0x0FBE | movsx | Gv_Eb
+00 | 0x0FBF | movsx | Gv_Ew
+00 | 0x0FBC | bsf | Gv_Ev
+00 | 0x0FBD | bsr | Gv_Ev
+F3 | 0x0FB8 | popcnt | Gv_Ev
+00 | 0x0FC8:0x0FCF | bswap | bswap
+
+# SETcc writes a byte to r/m8.
+00 | 0x0F90 | seto | Eb
+00 | 0x0F91 | setno | Eb
+00 | 0x0F92 | setb | Eb
+00 | 0x0F93 | setae | Eb
+00 | 0x0F94 | sete | Eb
+00 | 0x0F95 | setne | Eb
+00 | 0x0F96 | setbe | Eb
+00 | 0x0F97 | seta | Eb
+00 | 0x0F98 | sets | Eb
+00 | 0x0F99 | setns | Eb
+00 | 0x0F9A | setp | Eb
+00 | 0x0F9B | setnp | Eb
+00 | 0x0F9C | setl | Eb
+00 | 0x0F9D | setge | Eb
+00 | 0x0F9E | setle | Eb
+00 | 0x0F9F | setg | Eb
+
+# Common two-byte integer/control instructions.
+00 | 0x0F02 | lar | Gv_Ew
+00 | 0x0F03 | lsl | Gv_Ew
+00 | 0x0F06 | clts | None
+00 | 0x0F08 | invd | None
+00 | 0x0F09 | wbinvd | None
+00 | 0x0F20 | mov | special_move
+00 | 0x0F21 | mov | special_move
+00 | 0x0F22 | mov | special_move
+00 | 0x0F23 | mov | special_move
+
+# Shift groups. ModRM.reg selects the mnemonic; the opcode selects the count.
+00 | 0xC0/0 | rol | Eb_Ib
+00 | 0xC0/1 | ror | Eb_Ib
+00 | 0xC0/2 | rcl | Eb_Ib
+00 | 0xC0/3 | rcr | Eb_Ib
+00 | 0xC0/4 | shl | Eb_Ib
+00 | 0xC0/5 | shr | Eb_Ib
+00 | 0xC0/6 | sal | Eb_Ib
+00 | 0xC0/7 | sar | Eb_Ib
+00 | 0xC1/0 | rol | Ev_Iz
+00 | 0xC1/1 | ror | Ev_Iz
+00 | 0xC1/2 | rcl | Ev_Iz
+00 | 0xC1/3 | rcr | Ev_Iz
+00 | 0xC1/4 | shl | Ev_Iz
+00 | 0xC1/5 | shr | Ev_Iz
+00 | 0xC1/6 | sal | Ev_Iz
+00 | 0xC1/7 | sar | Ev_Iz
+00 | 0xD0:0xD1/0 | rol | shift_one
+00 | 0xD0:0xD1/1 | ror | shift_one
+00 | 0xD0:0xD1/2 | rcl | shift_one
+00 | 0xD0:0xD1/3 | rcr | shift_one
+00 | 0xD0:0xD1/4 | shl | shift_one
+00 | 0xD0:0xD1/5 | shr | shift_one
+00 | 0xD0:0xD1/6 | sal | shift_one
+00 | 0xD0:0xD1/7 | sar | shift_one
+00 | 0xD2:0xD3/0 | rol | shift_cl
+00 | 0xD2:0xD3/1 | ror | shift_cl
+00 | 0xD2:0xD3/2 | rcl | shift_cl
+00 | 0xD2:0xD3/3 | rcr | shift_cl
+00 | 0xD2:0xD3/4 | shl | shift_cl
+00 | 0xD2:0xD3/5 | shr | shift_cl
+00 | 0xD2:0xD3/6 | sal | shift_cl
+00 | 0xD2:0xD3/7 | sar | shift_cl
+
+# Unary arithmetic and indirect control-transfer groups.
+00 | 0xF6/0 | test | Eb_Ib
+00 | 0xF6/1 | test | Eb_Ib
+00 | 0xF6/2 | not | Eb
+00 | 0xF6/3 | neg | Eb
+00 | 0xF6/4 | mul | Eb
+00 | 0xF6/5 | imul | Eb
+00 | 0xF6/6 | div | Eb
+00 | 0xF6/7 | idiv | Eb
+00 | 0xF7/0 | test | Ev_Iz
+00 | 0xF7/1 | test | Ev_Iz
+00 | 0xF7/2 | not | Ev
+00 | 0xF7/3 | neg | Ev
+00 | 0xF7/4 | mul | Ev
+00 | 0xF7/5 | imul | Ev
+00 | 0xF7/6 | div | Ev
+00 | 0xF7/7 | idiv | Ev
+00 | 0xFE/0 | inc | Eb
+00 | 0xFE/1 | dec | Eb
+00 | 0xFF/0 | inc | Ev
+00 | 0xFF/1 | dec | Ev
+00 | 0xFF/2 | call | Ev64
+00 | 0xFF/4 | jmp | Ev64
+00 | 0xFF/6 | push | Ev64
+
 
 # SSE/AVX (Prefix dependent sharing same opcode)
 #00 | 0x0F58 | addps | Vps_Wps
