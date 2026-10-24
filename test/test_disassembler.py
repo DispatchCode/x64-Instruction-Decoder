@@ -74,26 +74,54 @@ def modrm_bytes(mod, reg, rm):
 def immediate_bytes(handler, prefixes, arch, opcode):
 	if handler in ("Eb_Ib", "Al_Ib", "Reg8_In_Opcode_Ib"):
 		return [0]
-	if handler in ("Ev_Iz", "Al_Iz", "Reg_In_Opcode_Iz"):
-		if handler == "Ev_Iz" and opcode[-1] == 0x83:
+	if handler in ("Ev_Iz", "Al_Iz", "Reg_In_Opcode_Iz", "Gv_Ev_Iz"):
+		if opcode[-1] in (0x83, 0xC1, 0xBA):
 			return [0]
+		if handler == "Ev_Iz" and opcode[-1] in (0xF7,):
+			return [0] * (2 if 0x66 in prefixes else 4)
 		# These encodings use an operand-size immediate, except REX.W forms,
 		# which still carry a sign-extended 32-bit immediate. The generated
 		# cases do not add REX.W; 66 selects the 16-bit form.
 		return [0] * (2 if 0x66 in prefixes else 4)
+	if handler in ("Gv_Ev_Ib", "Ev_Gv_Ib"):
+		return [0]
+	if handler == "push_imm":
+		return [0] * (1 if opcode[-1] == 0x6A else 2 if 0x66 in prefixes else 4)
+	if handler in ("int_imm", "ret_imm"):
+		return [0] * (1 if handler == "int_imm" else 2)
+	if handler == "enter":
+		return [0, 0, 0]
+	if handler == "aam_aad":
+		return [] if arch == "x86_64" else [0]
+	if handler == "op82":
+		return [] if arch == "x86_64" else [0]
+	if handler == "moffs":
+		return [0] * (4 if arch == "x86" and 0x67 not in prefixes else
+					2 if arch == "x86" else 4 if 0x67 in prefixes else 8)
+	if handler == "far_pointer":
+		return [] if arch == "x86_64" else [0] * (4 if 0x66 in prefixes else 6)
+	if handler == "io" and opcode[-1] <= 0xE7:
+		return [0]
 	if handler == "Jb":
 		return [0]
 	if handler == "Jz":
-		return [0] * (2 if arch == "x86" and 0x66 in prefixes else 4)
+		return [0] * (4 if arch == "x86_64" else
+					2 if 0x66 in prefixes else 4)
 	return []
 
 
 MODRM_HANDLERS = {
-	"Eb_Gb", "Gb_Eb", "Ev_Gv", "Gv_Ev", "Eb_Ib", "Ev_Iz", "Ew", "M"
+	"Eb_Gb", "Gb_Eb", "Ev_Gv", "Gv_Ev", "Eb_Ib", "Ev_Iz", "Ew", "M",
+	"Gv_Ew", "Gv_Eb", "Gv_Ev_Iz", "Gv_Ev_Ib", "Ev_Gv_Ib",
+	"Ev_Gv_CL", "Eb", "Ev", "Ev64", "Lea", "pop_Ev", "segment_move",
+	"arpl_movsxd", "special_move", "shift_one", "shift_cl", "far_load",
 }
 HANDLERS_WITHOUT_MODRM = {
 	"Al_Ib", "Al_Iz", "Jb", "Jz", "None", "Reg8_In_Opcode_Ib",
-	"Reg_In_Opcode", "Reg_In_Opcode_Iz", "push",
+	"Reg_In_Opcode", "Reg_In_Opcode_Iz", "push", "segment_stack",
+	"x86_only", "aam_aad", "push_imm", "op82", "integer_alias",
+	"far_pointer", "ret_imm", "int_imm", "enter", "xchg_accumulator",
+	"moffs", "string", "io", "jrcxz", "bswap", "endbr", "nop",
 }
 KNOWN_HANDLERS = MODRM_HANDLERS | HANDLERS_WITHOUT_MODRM
 X86_ONLY_HANDLERS = {"push"}
@@ -105,10 +133,28 @@ def encodings(definition, arch):
 	if arch == "x86_64" and len(definition.opcode) == 1 and \
 			0x40 <= definition.opcode[0] <= 0x4f:
 		return
+	if arch == "x86_64" and definition.handler == "far_load":
+		return
 	base = list(definition.prefixes + definition.opcode)
-	if definition.handler in MODRM_HANDLERS:
-		mods = (0, 1, 2) if definition.handler in ("Ew", "M") else (0, 1, 2, 3)
-		regs = (definition.extension,) if definition.extension is not None else range(8)
+	if definition.handler == "endbr":
+		yield bytes(base + [0xFA])
+		yield bytes(base + [0xFB])
+		return
+	needs_modrm = definition.handler in MODRM_HANDLERS or \
+		definition.extension is not None
+	if needs_modrm:
+		if definition.handler in ("Ew", "M", "far_load"):
+			mods = (0, 1, 2)
+		elif definition.handler == "special_move":
+			mods = (3,)
+		else:
+			mods = (0, 1, 2, 3)
+		if definition.extension is not None:
+			regs = (definition.extension,)
+		elif definition.handler == "segment_move":
+			regs = (0, 2, 3, 4, 5) if definition.opcode[-1] == 0x8E else range(6)
+		else:
+			regs = range(8)
 		for mod in mods:
 			for reg in regs:
 				for rm in range(8):
@@ -152,6 +198,47 @@ def parse_rows(output):
 	return rows
 
 
+def expected_mnemonic_for(definition, encoded, arch):
+	handler = definition.handler
+	opcode = definition.opcode[-1]
+	if arch == "x86_64":
+		if handler in {"push", "x86_only", "aam_aad", "far_pointer", "op82"}:
+			return "db"
+		if handler == "segment_stack" and not (
+				len(definition.opcode) == 2 and opcode in (0xA0, 0xA1, 0xA8, 0xA9)):
+			return "db"
+	if handler == "io":
+		return "in" if opcode in (0xE4, 0xE5, 0xEC, 0xED) else "out"
+	if handler == "integer_alias":
+		if opcode == 0x98:
+			return "cbw" if 0x66 in definition.prefixes else "cwde"
+		return "cwd" if 0x66 in definition.prefixes else "cdq"
+	if handler == "jrcxz":
+		if arch == "x86_64":
+			return "jecxz" if 0x67 in definition.prefixes else "jrcxz"
+		return "jcxz" if 0x67 in definition.prefixes else "jecxz"
+	if handler == "endbr":
+		return "endbr64" if encoded[-1] == 0xFA else "endbr32"
+	if handler == "string":
+		if opcode == 0x6C:
+			return "insb"
+		if opcode == 0x6D:
+			return "insw" if 0x66 in definition.prefixes else "insd"
+		if opcode == 0x6E:
+			return "outsb"
+		if opcode == 0x6F:
+			return "outsw" if 0x66 in definition.prefixes else "outsd"
+		width = "w" if 0x66 in definition.prefixes else "d"
+		return {
+			0xA4: "movsb", 0xA5: "movs" + width,
+			0xA6: "cmpsb", 0xA7: "cmps" + width,
+			0xAA: "stosb", 0xAB: "stos" + width,
+			0xAC: "lodsb", 0xAD: "lods" + width,
+			0xAE: "scasb", 0xAF: "scas" + width,
+		}[opcode]
+	return definition.mnemonic.lower()
+
+
 def fail(message):
 	print(f"FAIL: {message}", file=sys.stderr)
 	return 1
@@ -182,9 +269,8 @@ def main():
 				for encoded in encodings(definition, arch):
 					if not encoded:
 						continue
-					expected_mnemonic = definition.mnemonic
-					if arch == "x86_64" and definition.handler in X86_ONLY_HANDLERS:
-						expected_mnemonic = "db"
+					expected_mnemonic = expected_mnemonic_for(
+						definition, encoded, arch)
 					expected.append((len(corpus), encoded, expected_mnemonic,
 								 definition.line, definition.handler))
 					corpus.extend(encoded)
