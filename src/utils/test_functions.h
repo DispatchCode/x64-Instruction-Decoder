@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
 #ifndef _TEST_FUNCTIONS_H
 #define x64ID_TEST_FUNCTIONS_H
 
@@ -8,4 +10,4 @@ int example2(int n);
 double example3(double n);
 int example4(int n);
 
-#endif //x64ID_TEST_FUNCTIONS_H
+#endif // x64ID_TEST_FUNCTIONS_H

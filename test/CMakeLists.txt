@@ -1,9 +1,21 @@
-cmake_minimum_required(VERSION 3.16)
-project(x64id C)
+# SPDX-License-Identifier: GPL-2.0-only
 
-set(COMMONS ${CMAKE_CURRENT_SOURCE_DIR}/src/x64id.c ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/function_length.c ${CMAKE_CURRENT_SOURCE_DIR}/src/vector.c ${CMAKE_CURRENT_SOURCE_DIR}/src/queue.c)
+if(NOT BUILD_TESTING)
+	return()
+endif()
 
-set(TEST_SOURCES test/main_test.c)
+add_executable(x64id_test
+	main_test.c
+)
+target_link_libraries(x64id_test PRIVATE x64id_decoder)
+x64id_configure_target(x64id_test)
 
-add_executable(x64id_test ${COMMONS} ${TEST_SOURCES})
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
+add_test(
+	NAME disassembler_opcode_coverage
+	COMMAND "${Python3_EXECUTABLE}"
+		"${CMAKE_CURRENT_SOURCE_DIR}/test_disassembler.py"
+		"$<TARGET_FILE:x64id_disassembler>"
+		"${PROJECT_SOURCE_DIR}/src/tools/definitions.txt"
+)
