@@ -93,6 +93,18 @@ colored assembly, and branch arrows:
 interactively. The input path may also be omitted to enter it interactively.
 Use `--help` for the full option list.
 
+To disassemble bytes directly, use `--bytes` (or `-b`). Pass the bytes as one
+quoted string or as separate arguments:
+
+```sh
+./build/x64id_disassembler --arch x86_64 --bytes "48 89 D8 C3"
+./build/x64id_disassembler --arch x86_64 -b 48 89 D8 C3
+```
+
+When `--bytes` has no values after it, the program reads hexadecimal bytes from
+standard input. Bytes must be written as pairs of hexadecimal digits. Spaces,
+commas, and colons can separate them.
+
 Export the listing to a text file while also printing it to the terminal:
 
 ```sh
