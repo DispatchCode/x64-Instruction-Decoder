@@ -19,10 +19,10 @@ static char *trim(char *text)
 {
 	char *end;
 
-	while (isspace((unsigned char)*text))
+	while (isspace((uint8_t)*text))
 		text++;
 	end = text + strlen(text);
-	while (end > text && isspace((unsigned char)end[-1]))
+	while (end > text && isspace((uint8_t)end[-1]))
 		*--end = '\0';
 	return text;
 }
@@ -179,10 +179,7 @@ static void print_colored(FILE *stream, const char *text, size_t length,
 		fputs("\033[0m", stream);
 }
 
-static int is_identifier_char(unsigned char ch)
-{
-	return isalnum(ch) || ch == '_';
-}
+static int is_identifier_char(uint8_t ch) { return isalnum(ch) || ch == '_'; }
 
 static int token_is(const char *token, size_t length, const char *expected)
 {
@@ -210,9 +207,9 @@ static int is_register_token(const char *token, size_t length)
 	if (length >= 2 && (token[0] == 'r' || token[0] == 'R')) {
 		char number[3] = {0};
 		size_t digits = 1;
-		if (isdigit((unsigned char)token[1])) {
+		if (isdigit((uint8_t)token[1])) {
 			number[0] = token[1];
-			if (length > 2 && isdigit((unsigned char)token[2])) {
+			if (length > 2 && isdigit((uint8_t)token[2])) {
 				number[1] = token[2];
 				digits++;
 			}
@@ -221,8 +218,7 @@ static int is_register_token(const char *token, size_t length)
 			if (index >= 8 && index <= 15 &&
 				(length == suffix ||
 				 (length == suffix + 1 &&
-				  strchr("bwd", tolower((unsigned char)token[suffix])) !=
-					  NULL)))
+				  strchr("bwd", tolower((uint8_t)token[suffix])) != NULL)))
 				return 1;
 		}
 	}
@@ -266,13 +262,13 @@ static size_t memory_size_length(const char *text)
 		const char *ptr;
 
 		if (strncasecmp(text, sizes[i], length) != 0 ||
-			is_identifier_char((unsigned char)text[length]))
+			is_identifier_char((uint8_t)text[length]))
 			continue;
 		ptr = text + length;
-		while (isspace((unsigned char)*ptr))
+		while (isspace((uint8_t)*ptr))
 			ptr++;
 		if (strncasecmp(ptr, "PTR", 3) == 0 &&
-			!is_identifier_char((unsigned char)ptr[3]))
+			!is_identifier_char((uint8_t)ptr[3]))
 			return (size_t)(ptr + 3 - text);
 	}
 	return 0;
@@ -300,9 +296,9 @@ static void print_operands(FILE *stream, const char *text,
 			continue;
 		}
 
-		if (isalpha((unsigned char)*text) || *text == '_') {
+		if (isalpha((uint8_t)*text) || *text == '_') {
 			const char *end = text + 1;
-			while (is_identifier_char((unsigned char)*end))
+			while (is_identifier_char((uint8_t)*end))
 				end++;
 			size_t length = (size_t)(end - text);
 			int color = is_register_token(text, length) ? config->reg : 0;
@@ -338,7 +334,7 @@ static void print_assembly(FILE *stream, const char *assembly,
 	size_t mnemonic_length;
 	char mnemonic[32];
 
-	while (*mnemonic_end != '\0' && !isspace((unsigned char)*mnemonic_end))
+	while (*mnemonic_end != '\0' && !isspace((uint8_t)*mnemonic_end))
 		mnemonic_end++;
 	mnemonic_length = (size_t)(mnemonic_end - assembly);
 	if (mnemonic_length == 0) {
@@ -413,7 +409,7 @@ static void print_flow_gutter(FILE *stream, const struct disassembly_row *rows,
 	}
 }
 
-int disassembler_print(FILE *stream, const unsigned char *bytes,
+int disassembler_print(FILE *stream, const uint8_t *bytes,
 					   const struct disassembly_view *view,
 					   const struct color_config *config, int use_color)
 {

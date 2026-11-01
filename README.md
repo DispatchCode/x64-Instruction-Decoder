@@ -93,6 +93,18 @@ colored assembly, and branch arrows:
 interactively. The input path may also be omitted to enter it interactively.
 Use `--help` for the full option list.
 
+To disassemble bytes directly, use `--bytes` (or `-b`). Pass the bytes as one
+quoted string or as separate arguments:
+
+```sh
+./build/x64id_disassembler --arch x86_64 --bytes "48 89 D8 C3"
+./build/x64id_disassembler --arch x86_64 -b 48 89 D8 C3
+```
+
+When `--bytes` has no values after it, the program reads hexadecimal bytes from
+standard input. Bytes must be written as pairs of hexadecimal digits. Spaces,
+commas, and colons can separate them.
+
 Export the listing to a text file while also printing it to the terminal:
 
 ```sh
@@ -190,16 +202,12 @@ rebuild all code that uses the library.
 <a id="find-function-length"></a>
 ### Function length helper
 
-[`src/utils/function_length.h`](src/utils/function_length.h) provides the
-experimental `getFunctionLength(char *buffer)` helper. Call
-`x64id_set_arch()` first. It follows direct branches and stops at `ret` or
-`int3` (the `C3` and `CC` bytes). It does not handle jump tables and has no
-buffer-size argument, so the memory it reads must remain valid for every path
-it follows. The reported length is the span between the lowest and highest
-visited addresses and may include gaps.
-
-The `x64id` executable is a small decoder and function-length demonstration.
-Its usage is listed by `make help`.
+[`src/utils/function_length.h`](src/utils/function_length.h) contains the
+experimental `getFunctionLength(char *buffer)` helper. Set the architecture
+with `x64id_set_arch()` first. It follows direct branches and stops at `ret`
+(`C3`) or `int3` (`CC`). The function has no buffer-size argument, so the memory
+it reads must remain valid along every path. Its reported span is based on the
+first and last visited instruction addresses and may include gaps.
 
 <a id="tests"></a>
 ## Tests and opcode coverage tools

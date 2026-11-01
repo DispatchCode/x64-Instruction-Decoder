@@ -114,6 +114,7 @@ static size_t imm_byte_1b[256] = {
  */
 #define j1 0x12
 #define j2 0x22
+#define call4 0x32
 #define jc1 0x11
 #define jc2 0x21
 
@@ -135,7 +136,7 @@ static size_t op1b_labels[256] = {
 	/* B0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	/* C0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	/* D0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	/* E0 */ jc1, jc1, jc1, jc1, 0, 0, 0, 0, j2, j2, 0, j1, 0, 0, 0, 0,
+	/* E0 */ jc1, jc1, jc1, jc1, 0, 0, 0, 0, call4, j2, 0, j1, 0, 0, 0, 0,
 	/* F0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
 // clang-format on
@@ -334,6 +335,7 @@ enum jmp_type {
 	JCC_FAR = 2,   // 2-byte JCC, 4bytes imm
 	JMP_SHORT = 4, // 1-byte JMP
 	JMP_FAR = 8,   // 4-byte JMP
+	CALL_RELATIVE = 16,
 };
 
 enum prefixes {

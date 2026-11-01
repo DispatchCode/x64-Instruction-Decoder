@@ -11,29 +11,12 @@ set(X64ID_DECODER_SOURCES
 	${PROJECT_SOURCE_DIR}/src/disasm.c
 )
 
-set(X64ID_ANALYSIS_SOURCES
-	${PROJECT_SOURCE_DIR}/src/utils/function_length.c
-	${PROJECT_SOURCE_DIR}/src/vector.c
-	${PROJECT_SOURCE_DIR}/src/queue.c
-)
-
-set(X64ID_SAMPLE_SOURCES
-	${PROJECT_SOURCE_DIR}/src/utils/test_functions.c
-)
-
 add_library(x64id_decoder STATIC
 	${X64ID_DECODER_SOURCES}
 )
 target_include_directories(x64id_decoder PUBLIC
 	${PROJECT_SOURCE_DIR}/src
 )
-
-add_executable(x64id
-	${X64ID_ANALYSIS_SOURCES}
-	${X64ID_SAMPLE_SOURCES}
-	${PROJECT_SOURCE_DIR}/src/main.c
-)
-target_link_libraries(x64id PRIVATE x64id_decoder)
 
 add_executable(x64id_disassembler
 	${PROJECT_SOURCE_DIR}/src/main_disassembler.c
@@ -95,7 +78,6 @@ function(x64id_configure_target TARGET_NAME)
 	add_dependencies(${TARGET_NAME} format)
 endfunction()
 
-x64id_configure_target(x64id)
 x64id_configure_target(x64id_disassembler)
 x64id_configure_target(x64id_decoder)
 

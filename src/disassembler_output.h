@@ -47,7 +47,7 @@ struct color_config disassembler_default_colors(void);
 int disassembler_load_color_config(struct color_config *config,
 								   const char *requested_path);
 int disassembler_colors_enabled(const struct color_config *config);
-int disassembler_print(FILE *stream, const unsigned char *bytes,
+int disassembler_print(FILE *stream, const uint8_t *bytes,
 					   const struct disassembly_view *view,
 					   const struct color_config *config, int use_color);
 

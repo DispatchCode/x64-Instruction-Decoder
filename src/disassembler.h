@@ -4,6 +4,7 @@
 #define X64ID_DISASSEMBLER_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include "disassembler_output.h"
 
@@ -17,8 +18,8 @@ struct disassembler_result {
 	char *assembly_text;
 };
 
-int disassembler_decode_buffer(const unsigned char *bytes, size_t file_size,
-							   int arch, struct disassembler_result *result);
+int disassembler_decode_buffer(const uint8_t *bytes, size_t file_size, int arch,
+							   struct disassembler_result *result);
 void disassembler_free_result(struct disassembler_result *result);
 
 #endif

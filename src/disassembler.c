@@ -124,7 +124,7 @@ static int append_row(struct disassembly_row **rows, size_t *row_count,
 	return 1;
 }
 
-static int build_disassembly_rows(const unsigned char *bytes, size_t file_size,
+static int build_disassembly_rows(const uint8_t *bytes, size_t file_size,
 								  int arch, struct disassembly_row **rows_out,
 								  size_t *row_count_out, size_t *lane_count_out,
 								  size_t **lane_heads_out,
@@ -263,8 +263,8 @@ error:
 	return 0;
 }
 
-int disassembler_decode_buffer(const unsigned char *bytes, size_t file_size,
-							   int arch, struct disassembler_result *result)
+int disassembler_decode_buffer(const uint8_t *bytes, size_t file_size, int arch,
+							   struct disassembler_result *result)
 {
 	struct text_arena assembly_text = {0};
 
