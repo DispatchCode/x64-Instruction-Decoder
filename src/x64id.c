@@ -308,6 +308,9 @@ static void x64id_decode_modrm(struct instruction *instr,
 	uint16_t value = 0;
 	if (jcc_table != NULL && ((value = jcc_table[instr->op[op_index]]))) {
 		switch (value) {
+		case call4:
+			instr->jcc_type = CALL_RELATIVE;
+			break;
 		case j1:
 			instr->jcc_type = JMP_SHORT;
 			break;
