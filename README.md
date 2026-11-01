@@ -190,16 +190,12 @@ rebuild all code that uses the library.
 <a id="find-function-length"></a>
 ### Function length helper
 
-[`src/utils/function_length.h`](src/utils/function_length.h) provides the
-experimental `getFunctionLength(char *buffer)` helper. Call
-`x64id_set_arch()` first. It follows direct branches and stops at `ret` or
-`int3` (the `C3` and `CC` bytes). It does not handle jump tables and has no
-buffer-size argument, so the memory it reads must remain valid for every path
-it follows. The reported length is the span between the lowest and highest
-visited addresses and may include gaps.
-
-The `x64id` executable is a small decoder and function-length demonstration.
-Its usage is listed by `make help`.
+[`src/utils/function_length.h`](src/utils/function_length.h) contains the
+experimental `getFunctionLength(char *buffer)` helper. Set the architecture
+with `x64id_set_arch()` first. It follows direct branches and stops at `ret`
+(`C3`) or `int3` (`CC`). The function has no buffer-size argument, so the memory
+it reads must remain valid along every path. Its reported span is based on the
+first and last visited instruction addresses and may include gaps.
 
 <a id="tests"></a>
 ## Tests and opcode coverage tools

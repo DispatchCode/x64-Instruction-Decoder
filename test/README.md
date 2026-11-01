@@ -24,6 +24,11 @@ known `nop`. It checks that both unsupported bytes appear in a `db` row and
 that decoding resumes at the following instruction. This covers the raw-binary
 CLI contract; these tests do not interpret ELF or PE files.
 
+The `function_length_control_flow` CTest exercises `getFunctionLength()` with
+straight-line code, conditional and unconditional branches, direct and indirect
+calls, and `int3`. It checks the visited instruction addresses and reported
+span.
+
 From the project root, run:
 
 ```sh

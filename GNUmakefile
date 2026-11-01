@@ -31,10 +31,6 @@ help: ## Show documented build targets and executable usage.
 		'Executables (make builds them in $(BUILD_DIR); x64id_test is under test/):' \
 		'  $(BUILD_DIR)/x64id_disassembler [--arch x86|x86_64] FILE' \
 		'      Disassemble a raw binary. Use --help for all CLI options.' \
-		'  $(BUILD_DIR)/x64id FILE 1|2' \
-		'      Decode a binary with architecture 1=x86 or 2=x86_64.' \
-		'  $(BUILD_DIR)/x64id 1|2' \
-		'      Run the built-in in-memory decoder demo.' \
 		'  $(BUILD_DIR)/test/x64id_test FILE 1|2' \
 		'      Run the low-level decoder diagnostic.' \
 		'' \

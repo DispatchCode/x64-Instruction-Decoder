@@ -19,3 +19,17 @@ add_test(
 		"$<TARGET_FILE:x64id_disassembler>"
 		"${PROJECT_SOURCE_DIR}/src/tools/definitions.txt"
 )
+
+add_executable(function_length_test
+	function_length_test.c
+	${PROJECT_SOURCE_DIR}/src/utils/function_length.c
+	${PROJECT_SOURCE_DIR}/src/queue.c
+	${PROJECT_SOURCE_DIR}/src/vector.c
+)
+target_link_libraries(function_length_test PRIVATE x64id_decoder)
+x64id_configure_target(function_length_test)
+
+add_test(
+	NAME function_length_control_flow
+	COMMAND "$<TARGET_FILE:function_length_test>"
+)
