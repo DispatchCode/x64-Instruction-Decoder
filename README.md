@@ -268,8 +268,7 @@ generator can construct its encoding forms.
 
 ## License
 
-Copyright (C) 2020–2026 Marco 'DispatchCode' Crivellari.
-
 This project is licensed under the GNU General Public License, version 2 only
-(GPL-2.0-only). Copyright (C) 2020–2026 Marco 'DispatchCode' Crivellari.
 See [`LICENSE`](LICENSE) for the full license text.
+
+Copyright (C) 2020–2026 Marco 'DispatchCode' Crivellari.
